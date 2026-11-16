@@ -1,0 +1,15 @@
+# 构建产物
+build/
+dist/
+__pycache__/
+*.spec.bak
+
+# 打包成品（建议走 GitHub Releases）
+EasyDraw.exe
+
+# 日志与备份
+*.log
+*.bak
+
+# 本机配置（含本机模型路径，勿入库；用 example 文件做模板）
+api_config.json

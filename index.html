@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>Easy Draw - NoobAI XL</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    font-family: "Microsoft YaHei", system-ui, sans-serif;
+    background: #131322;
+    background-image:
+      radial-gradient(900px 520px at 12% -8%, rgba(124,58,237,.16), transparent 60%),
+      radial-gradient(820px 460px at 96% 2%, rgba(14,165,233,.10), transparent 55%),
+      radial-gradient(720px 540px at 55% 112%, rgba(99,102,241,.09), transparent 60%);
+    background-attachment: fixed;
+    color: #e8e8f0; padding: 24px;
+  }
+  ::selection { background: rgba(168,85,247,.35); }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb {
+    background: #33335a; border-radius: 999px; border: 2px solid #131322;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #47477a; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  h1 {
+    font-size: 23px; margin: 0 0 4px;
+    background: linear-gradient(90deg, #c4b5fd, #a78bfa 45%, #7dd3fc);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sub { color: #8888aa; font-size: 13px; margin-bottom: 20px; }
+  .layout { display: grid; grid-template-columns: 1fr 1.1fr; gap: 20px; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.028));
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 16px; padding: 18px;
+    box-shadow: 0 10px 34px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  label { display:block; font-size: 13px; color:#b8b8d0; margin: 10px 0 4px; }
+  textarea {
+    width: 100%; background: #0e0e1c; color: #e8e8f0; border: 1px solid #33335a;
+    border-radius: 8px; padding: 10px; font-size: 14px;
+    font-family: inherit; resize: vertical; line-height: 1.5;
+  }
+  #positive { height: 110px; }
+  #negative { height: 56px; }
+  select, input {
+    background: #0e0e1c; color: #e8e8f0; border: 1px solid #33335a;
+    border-radius: 8px; padding: 8px 10px; font-size: 14px; width: 100%;
+  }
+  .row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+  button {
+    width: 100%; margin-top: 16px; padding: 13px; font-size: 16px; font-weight: bold;
+    background: linear-gradient(135deg, #7c3aed, #a855f7); color: white;
+    border: none; border-radius: 10px; cursor: pointer; transition: filter .15s;
+  }
+  button:hover { filter: brightness(1.15); }
+  button:disabled { filter: grayscale(.6); cursor: wait; }
+  .status { margin-top: 10px; font-size: 13px; color: #8888aa; min-height: 18px; }
+  .imgbox {
+    display: flex; align-items: center; justify-content: center;
+    background: #0e0e1c; border: 1px dashed #33335a; border-radius: 12px;
+    min-height: 420px; overflow: hidden;
+  }
+  .imgbox img { max-width: 100%; max-height: 640px; border-radius: 8px; }
+  .placeholder { color: #555577; font-size: 14px; }
+  a.dl { display:inline-block; margin-top: 10px; color:#a78bfa; font-size:13px; text-decoration:none; }
+
+  /* ===== 标签面板 ===== */
+  .tagpanel { margin-top: 20px; }
+  .taghead { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom: 10px; }
+  .taghead h2 { font-size: 15px; margin: 0; color:#c4b5fd; }
+  #tagsearch {
+    flex:1; min-width: 200px; background:#0e0e1c; border:1px solid #33335a; border-radius:8px;
+    padding:7px 10px; font-size:13px; width:auto;
+  }
+  .cat { margin-top: 10px; }
+  .catname { font-size:12px; color:#8f8fb4; margin: 6px 0; user-select:none; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip {
+    background:#1b1b33; border:1px solid #33335a; color:#cfcfe8;
+    padding:4px 10px; border-radius:999px; font-size:12.5px; cursor:pointer;
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease,
+                transform .12s ease, box-shadow .18s ease;
+    white-space:nowrap; will-change:transform;
+  }
+  .chip:hover {
+    border-color:#7c3aed; color:#fff;
+    background:linear-gradient(135deg,#7c3aed14,#a855f70d);
+    transform:translateY(-1px);
+    box-shadow:0 2px 8px rgba(124,58,237,.18);
+  }
+  .chip:active { transform:scale(.93); transition-duration:.06s; }
+  .chip b { font-weight: 500; }
+  .chip .cn { color:#9a9ac0; margin-left:5px; font-size:11.5px; transition:color .18s ease; }
+  .chip.sel .cn { color:#d9c6ff; }
+  .chip.sel {
+    background:linear-gradient(135deg,#7c3aed33,#a855f722); border-color:#a855f7;
+    color:#e9d8ff; font-weight:600;
+    box-shadow:0 0 0 3px rgba(124,58,237,.14), inset 0 1px 0 rgba(255,255,255,.14);
+    animation:chipPop .22s ease;
+  }
+  .chip.nsfwcat { border-color:#7a4a3a; }
+  .chip.sel.nsfwcat {
+    background:linear-gradient(135deg,#c0392b33,#a855f722); border-color:#c0392b;
+    color:#ffd7cf;
+    box-shadow:0 0 0 3px rgba(192,57,43,.14), inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  @keyframes chipPop {
+    0% { transform:scale(.9); }
+    55% { transform:scale(1.06); }
+    100% { transform:scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chip, .chip .cn { transition:none; }
+    .chip:hover { transform:none; box-shadow:none; }
+    .chip.sel { animation:none; }
+  }
+
+  /* ===== 视觉优化 v2 (20261106b) ===== */
+  label { transition: color .18s ease; }
+  textarea, select, input[type="text"], input[type="password"] {
+    transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+    caret-color: #a78bfa;
+  }
+  textarea:hover, select:hover,
+  input[type="text"]:hover, input[type="password"]:hover { border-color: #47477a; }
+  textarea:focus, select:focus,
+  input[type="text"]:focus, input[type="password"]:focus, #tagsearch:focus {
+    outline: none; border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124,58,237,.22);
+  }
+  input[type="checkbox"] { accent-color: #a855f7; }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    height: 6px; border-radius: 999px; padding: 0;
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.35);
+    cursor: pointer; transition: box-shadow .18s ease, filter .18s ease;
+  }
+  input[type="range"]:hover { filter: brightness(1.15); }
+  input[type="range"]:focus { box-shadow: 0 0 0 3px rgba(124,58,237,.22); }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; border: 1px solid rgba(0,0,0,.15);
+    box-shadow: 0 2px 6px rgba(0,0,0,.45), inset 0 1px 0 #fff;
+    transition: transform .12s ease;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+  input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.28); }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; border: 1px solid rgba(0,0,0,.15);
+    box-shadow: 0 2px 6px rgba(0,0,0,.45);
+  }
+  input[type="range"]::-moz-range-track {
+    height: 6px; border-radius: 999px;
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+  }
+  button {
+    transition: filter .15s ease, transform .12s ease, box-shadow .18s ease;
+  }
+  button:hover {
+    filter: brightness(1.15); transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(124,58,237,.30);
+  }
+  button:active { transform: translateY(0) scale(.97); transition-duration: .06s; }
+  #clearpos:hover, #nlSave:hover { box-shadow: 0 4px 12px rgba(0,0,0,.35); }
+  .status {
+    transition: color .2s ease;
+  }
+  .imgbox {
+    border: 1px solid rgba(255,255,255,.10);
+    background:
+      radial-gradient(420px 300px at 50% 42%, rgba(124,58,237,.07), transparent 70%),
+      #0e0e1c;
+  }
+  .imgbox img {
+    animation: imgIn .35s ease;
+    box-shadow: 0 12px 40px rgba(0,0,0,.5);
+  }
+  @keyframes imgIn {
+    0% { opacity: 0; transform: scale(.975); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .placeholder { letter-spacing: .5px; }
+  a.dl { transition: color .15s ease; }
+  a.dl:hover { color: #c4b5fd; text-decoration: underline; }
+  details > summary {
+    border-radius: 8px; padding: 6px 10px; margin-top: 4px;
+    transition: background-color .15s ease, color .15s ease;
+  }
+  details > summary:hover { background: rgba(255,255,255,.05); color: #c4b5fd; }
+  .catname { transition: color .18s ease; }
+  @media (prefers-reduced-motion: reduce) {
+    .imgbox img { animation: none; }
+    button, textarea, select, input { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎨 Easy Draw · NoobAI-XL v-pred</h1>
+  <div class="sub">本地 ComfyUI 加速中 · RTX 5060 · build 20261109a · 点标签自动拼提示词</div>
+
+  <div class="layout">
+    <div class="card">
+      <label>✍️ 正面提示词（点击下方标签自动补进这里）</label>
+      <textarea id="positive" placeholder="masterpiece, best quality, 1girl, ...">masterpiece, best quality, very aesthetic, 1girl, upper body, looking at viewer, cherry blossoms, night, wind</textarea>
+
+      <label>🚫 负面提示词（不想要的东西，留默认即可）</label>
+      <textarea id="negative">worst quality, bad quality, lowres, bad anatomy, bad hands, jpeg artifacts</textarea>
+
+      <div class="row">
+        <div>
+          <label>生成模式</label>
+          <select id="genmode">
+            <option value="t2i">文生图</option>
+            <option value="i2i">图生图（参考图）</option>
+            <option value="charref">角色参考（人物一致）</option>
+          </select>
+        </div>
+        <div id="denoiseBox">
+          <label>重绘幅度 <span id="dnv">0.55</span> <span style="color:#666">(角色参考: 1=全新画面)</span></label>
+          <input id="denoise" type="range" min="0.1" max="1" step="0.05" value="0.55" oninput="dnv.textContent=this.value">
+        </div>
+        <div id="ipweightBox">
+          <label>角色相似度 <span id="ipv">0.5</span> <span style="color:#666">(低=听提示词, 高=像参考图)</span></label>
+          <input id="ipweight" type="range" min="0.3" max="1" step="0.05" value="0.5" oninput="ipv.textContent=this.value">
+        </div>
+        <div id="refimgBox">
+          <label>参考图</label>
+          <input id="refimg" type="file" accept="image/png,image/jpeg,image/webp">
+        </div>
+        <div id="ratioBox">
+          <label>画面比例</label>
+          <select id="ratio">
+            <option value="832x1216">竖图 832×1216</option>
+            <option value="1024x1024">方图 1024×1024</option>
+            <option value="1216x832">横图 1216×832</option>
+            <option value="768x1152">小竖图 768×1152</option>
+          </select>
+        </div>
+        <div>
+          <label>步数 <span id="stepsv">28</span></label>
+          <input id="steps" type="range" min="16" max="40" value="28" oninput="stepsv.textContent=this.value">
+        </div>
+        <div>
+          <label>CFG <span id="cfgv">5.5</span></label>
+          <input id="cfg" type="range" min="3" max="9" step="0.5" value="5.5" oninput="cfgv.textContent=this.value">
+        </div>
+        <div>
+          <label>分级</label>
+          <select id="rating">
+            <option value="" selected>普通向（不加 tag）</option>
+            <option value="rating:sensitive">擦边 / 诱感</option>
+            <option value="rating:questionable">暗示向</option>
+            <option value="nsfw, rating:explicit">R18 成人向</option>
+          </select>
+        </div>
+        <div>
+          <label>🎲 种子（-1 = 每次随机）</label>
+          <input id="seed" type="text" value="-1">
+        </div>
+      </div>
+
+      <button id="go" style="width:100%" onclick="generate()">🚀 开 始 生 成</button>
+      <div class="status" id="status"></div>
+      <a class="dl" id="dl" style="display:none" target="_blank">⬇ 下载原图</a>
+    </div>
+
+    <div class="card">
+      <div class="imgbox">
+        <span class="placeholder" id="phph">生成结果会显示在这里</span>
+        <img id="img" style="display:none">
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 自然语言转提示词 ===== -->
+  <div class="card tagpanel">
+    <div class="taghead">
+      <h2>🪄 自然语言 → 标准提示词</h2>
+      <select id="nlMode" style="width:auto;padding:6px 10px;font-size:13px;">
+        <option value="local">本地词典（离线）</option>
+        <option value="api">API 深度转换（任意句子）</option>
+      </select>
+      <label style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer;" title="转换后自动补上语义相关的场景/氛围/构图标签">
+        <input type="checkbox" id="nlExpand" style="width:auto"> ✨ 语义关联扩展
+      </label>
+      <label style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="checkbox" id="nlReplace" style="width:auto"> 转换后替换（默认追加）
+      </label>
+    </div>
+    <textarea id="nl" placeholder="用中文描述画面，例如：一个金发双马尾少女穿着水手服，坐在教室里看镜头，微笑，夜晚，樱花花瓣飘落" style="height:64px"></textarea>
+    <button id="nlgo" style="width:auto;margin-top:10px;padding:9px 18px;font-size:14px;background:linear-gradient(135deg,#0ea5e9,#6366f1);" onclick="nlConvert()">转换为标签 →</button>
+    <button id="nlgogen" style="width:auto;margin:10px 0 0 8px;padding:9px 18px;font-size:14px;background:linear-gradient(135deg,#059669,#10b981);" onclick="nlGenerate()">🚀 转换并出图</button>
+    <div class="status" id="nlstatus"></div>
+
+    <details id="nlsettings" style="margin-top:12px;">
+      <summary style="cursor:pointer;font-size:13px;color:#8f8fb4;">⚙️ API 设置（OpenAI 兼容接口，key 仅存本机浏览器）</summary>
+      <label>接口地址（填到版本号即可，如 GLM）</label>
+      <input id="nlUrl" placeholder="https://open.bigmodel.cn/api/paas/v4">
+      <label>模型名</label>
+      <input id="nlModel" placeholder="glm-4-flash（智谱免费款）或 deepseek-chat 等">
+      <label>API Key</label>
+      <input id="nlKey" type="password" placeholder="粘贴你的 key">
+      <button id="nlSave" style="width:auto;margin-top:10px;padding:8px 16px;font-size:13px;background:#33335a;" onclick="saveApiCfg()">保存设置</button>
+      <span class="status" id="apisavestatus"></span>
+    </details>
+  </div>
+
+  <!-- ===== Danbooru 标签面板 ===== -->
+  <div class="card tagpanel">
+    <div class="taghead">
+      <h2>🧷 Danbooru 标准标签库</h2>
+      <input id="tagsearch" placeholder="🔍 搜标签：英文 hair / 中文 夜晚、泳装 都行">
+      <button id="clearpos" style="width:auto;margin:0;padding:6px 12px;font-size:12px;background:#33335a;">清空正面提示词</button>
+    </div>
+    <details id="tageditor" style="margin:0 0 10px;">
+      <summary style="cursor:pointer;font-size:13px;color:#8f8fb4;">🧩 词库编辑（按组增删待选标签，保存后两端共用）</summary>
+      <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;align-items:flex-start;">
+        <select id="edGroup" style="width:auto;max-width:300px;"></select>
+        <div id="edChips" style="flex:1;min-width:320px;max-height:220px;overflow:auto;display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:#0e0e1c;border:1px solid #33335a;border-radius:10px;"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;">
+        <input id="edCN" placeholder="中文名" style="width:130px">
+        <input id="edEN" placeholder="英文 tag（空格风格，可自定义）" style="width:250px">
+        <button id="edAdd" style="width:auto;margin:0;padding:7px 14px;font-size:13px;background:linear-gradient(135deg,#0ea5e9,#6366f1);">＋ 添加到当前组</button>
+        <button id="edSave" style="width:auto;margin:0;padding:7px 14px;font-size:13px;background:linear-gradient(135deg,#059669,#10b981);">💾 保存并应用</button>
+        <span class="status" id="edStatus" style="margin:0;"></span>
+      </div>
+    </details>
+    <div id="tagbody"></div>
+  </div>
+</div>
+
+<script>
+const QUALITY = "masterpiece, best quality, very aesthetic, ";
+
+/* ============ 标签库（Danbooru 英文标准拼写） ============ */
+const TAG_DB = [
+  {cat: "👤 基础人物", tags: [
+      {en:"1girl",cn:"一个女孩"},{en:"1boy",cn:"一个男孩"},{en:"2girls",cn:"两个女孩"},{en:"2boys",cn:"双人男性"},
+      {en:"3girls",cn:"三人女性"},{en:"hetero",cn:"一男一女"},{en:"solo",cn:"单人"},{en:"couple",cn:"情侣"},
+      {en:"multiple girls",cn:"多个女孩"},{en:"lifelike skin",cn:"真实质感皮肤"},{en:"realistic",cn:"写实风"},{en:"mature female",cn:"成熟女性"},
+      {en:"mature male",cn:"成熟男性"},{en:"tall",cn:"高挑"},{en:"short",cn:"娇小"},
+  ]},
+  {cat: "💇 发型", tags: [
+      {en:"long hair",cn:"长发"},{en:"very long hair",cn:"超长发"},{en:"short hair",cn:"短发"},{en:"medium hair",cn:"中长发"},
+      {en:"twintails",cn:"双马尾"},{en:"ponytail",cn:"马尾"},{en:"low ponytail",cn:"低马尾"},{en:"side ponytail",cn:"侧马尾"},
+      {en:"single braid",cn:"单麻花辫"},{en:"braided ponytail",cn:"麻花马尾"},{en:"hair bun",cn:"发髻"},{en:"double bun",cn:"双丸子头"},
+      {en:"messy hair",cn:"凌乱头发"},{en:"wavy hair",cn:"波浪卷发"},{en:"curly hair",cn:"卷发"},{en:"straight hair",cn:"黑长直"},
+      {en:"spiky hair",cn:"尖发"},{en:"ahoge",cn:"呆毛"},{en:"bangs",cn:"刘海"},{en:"hair between eyes",cn:"眉间发丝"},
+      {en:"sidelocks",cn:"侧发"},{en:"hime cut",cn:"公主切"},{en:"drill hair",cn:"螺旋卷"},{en:"ringlets",cn:"垂环卷"},
+      {en:"hair intakes",cn:"发束"},{en:"floating hair",cn:"飘发"},{en:"hair rings",cn:"发环"},{en:"hairclip",cn:"发夹"},
+      {en:"hair flower",cn:"发间花"},
+  ]},
+  {cat: "🎨 发色", tags: [
+      {en:"blonde",cn:"金发"},{en:"brown hair",cn:"棕发"},{en:"black hair",cn:"黑发"},{en:"red hair",cn:"红发"},
+      {en:"orange hair",cn:"橙发"},{en:"blue hair",cn:"蓝发"},{en:"aqua hair",cn:"水蓝发"},{en:"green hair",cn:"绿发"},
+      {en:"purple hair",cn:"紫发"},{en:"pink hair",cn:"粉发"},{en:"white hair",cn:"白发"},{en:"silver hair",cn:"银发"},
+      {en:"grey hair",cn:"灰发"},{en:"gradient hair",cn:"渐变发色"},{en:"multicolored hair",cn:"多色头发"},{en:"two-tone hair",cn:"双色发"},
+      {en:"streaked hair",cn:"挑染"},{en:"colored inner hair",cn:"内层彩色"},
+  ]},
+  {cat: "👁 眼睛", tags: [
+      {en:"blue eyes",cn:"蓝眼睛"},{en:"red eyes",cn:"红眼睛"},{en:"brown eyes",cn:"棕眼睛"},{en:"green eyes",cn:"绿眼睛"},
+      {en:"purple eyes",cn:"紫眼睛"},{en:"aqua eyes",cn:"水蓝眼"},{en:"orange eyes",cn:"橙瞳"},{en:"pink eyes",cn:"粉瞳"},
+      {en:"grey eyes",cn:"灰瞳"},{en:"heterochromia",cn:"异色瞳"},{en:"tsurime",cn:"吊眼"},{en:"tareme",cn:"垂眼"},
+      {en:"half-closed eyes",cn:"半睁眼"},{en:"closed eyes",cn:"闭眼"},{en:"empty eyes",cn:"空洞眼神"},
+  ]},
+  {cat: "😊 表情 / 眼神", tags: [
+      {en:"smile",cn:"微笑"},{en:"light smile",cn:"淡淡浅笑"},{en:"grin",cn:"咧嘴笑"},{en:"laughing",cn:"大笑"},
+      {en:"open mouth",cn:"张嘴"},{en:"closed mouth",cn:"闭嘴"},{en:"blush",cn:"脸红"},{en:"frown",cn:"皱眉"},
+      {en:"smirk",cn:"得意坏笑"},{en:"pout",cn:"嘟嘴"},{en:"tears",cn:"含泪"},{en:"crying",cn:"哭泣"},
+      {en:"wink",cn:"单眼眨眼"},{en:"angry",cn:"生气"},{en:"surprised",cn:"惊讶"},{en:"expressionless",cn:"无表情"},
+      {en:"serious",cn:"严肃"},{en:"yawning",cn:"打哈欠"},{en:"gritted teeth",cn:"咬牙"},{en:"happy",cn:"开心"},
+      {en:"sad",cn:"难过"},{en:"looking at viewer",cn:"看着镜头"},{en:"looking away",cn:"看向别处"},{en:"looking back",cn:"回头看"},
+      {en:"head tilt",cn:"歪头"},
+  ]},
+  {cat: "👗 上装", tags: [
+      {en:"shirt",cn:"衬衫"},{en:"white shirt",cn:"白衬衫"},{en:"blouse",cn:"女式衬衫"},{en:"dress shirt",cn:"正装衬衫"},
+      {en:"t-shirt",cn:"T恤"},{en:"tank top",cn:"背心"},{en:"vest",cn:"马甲"},{en:"crop top",cn:"露脐上衣"},
+      {en:"off shoulder",cn:"露肩装"},{en:"off-shoulder sweater",cn:"露肩毛衣"},{en:"sleeveless shirt",cn:"无袖衬衫"},{en:"sleeveless hoodie",cn:"无袖连帽衫"},
+      {en:"sweatshirt",cn:"卫衣"},{en:"sweater",cn:"毛衣"},{en:"turtleneck",cn:"高领毛衣"},{en:"hoodie",cn:"连帽衫"},
+      {en:"cardigan",cn:"开衫外套"},{en:"bodysuit",cn:"连体紧身衣"},
+  ]},
+  {cat: "👖 下装 / 裤裙", tags: [
+      {en:"skirt",cn:"短裙"},{en:"pleated skirt",cn:"百褶裙"},{en:"miniskirt",cn:"迷你裙"},{en:"long skirt",cn:"长裙"},
+      {en:"pencil skirt",cn:"铅笔裙"},{en:"layered skirt",cn:"叠层裙"},{en:"denim shorts",cn:"牛仔短裤"},{en:"hotpants",cn:"热裤"},
+      {en:"cargo pants",cn:"工装裤"},{en:"jeans",cn:"牛仔裤"},
+  ]},
+  {cat: "🧥 外套 / 套装", tags: [
+      {en:"jacket",cn:"夹克"},{en:"coat",cn:"大衣"},{en:"coat on shoulders",cn:"大衣披肩"},{en:"trench coat",cn:"风衣"},
+      {en:"denim jacket",cn:"牛仔夹克"},{en:"bomber jacket",cn:"飞行夹克"},{en:"business suit",cn:"西装"},{en:"pantsuit",cn:"套装裤"},
+      {en:"blazer",cn:"西装外套"},
+  ]},
+  {cat: "👘 连衣裙 / 和装", tags: [
+      {en:"dress",cn:"连衣裙"},{en:"gown",cn:"晚礼服"},{en:"sundress",cn:"吊带长裙"},{en:"summer dress",cn:"夏日连衣裙"},
+      {en:"nightgown",cn:"长睡裙"},{en:"nightie",cn:"短睡裙"},{en:"pajamas",cn:"睡衣"},{en:"bathrobe",cn:"浴袍"},
+      {en:"kimono",cn:"和服"},{en:"yukata",cn:"浴衣"},{en:"hakama",cn:"袴"},{en:"cheongsam",cn:"旗袍"},
+  ]},
+  {cat: "🎓 制服 / 职业装", tags: [
+      {en:"school uniform",cn:"校服"},{en:"sailor uniform",cn:"水手服"},{en:"serafuku",cn:"日式水手服"},{en:"maid costume",cn:"女仆装"},
+      {en:"maid headdress",cn:"女仆发饰"},{en:"maid apron",cn:"女仆围裙"},{en:"nurse cap",cn:"护士帽"},{en:"nurse outfit",cn:"护士服"},
+      {en:"police uniform",cn:"警服"},{en:"military uniform",cn:"军装"},{en:"flight attendant",cn:"空姐装"},
+  ]},
+  {cat: "🎀 配饰 / 鞋袜", tags: [
+      {en:"collar",cn:"项圈"},{en:"necktie",cn:"领带"},{en:"ribbon",cn:"丝带"},{en:"bow tie",cn:"领结"},
+      {en:"suspenders",cn:"背带"},{en:"belt",cn:"腰带"},{en:"scarf",cn:"围巾"},{en:"hat",cn:"帽子"},
+      {en:"beret",cn:"贝雷帽"},{en:"witch hat",cn:"女巫帽"},{en:"top hat",cn:"高礼帽"},{en:"beanie",cn:"毛线帽"},
+      {en:"sun hat",cn:"遮阳帽"},{en:"gloves",cn:"手套"},{en:"fingerless gloves",cn:"露指手套"},{en:"arm warmers",cn:"臂套"},
+      {en:"leg warmers",cn:"腿套"},{en:"stockings",cn:"长筒袜"},{en:"thighhighs",cn:"过膝袜"},{en:"pantyhose",cn:"连裤袜"},
+      {en:"fishnet thighhighs",cn:"渔网过膝袜"},{en:"garter straps",cn:"吊袜带"},{en:"ankle boots",cn:"短靴"},{en:"knee boots",cn:"长筒靴"},
+      {en:"sneakers",cn:"运动鞋"},{en:"footwear visible",cn:"鞋子入画"},{en:"towel around waist",cn:"腰围浴巾"},
+  ]},
+  {cat: "👙 贴身 / 泳装", tags: [
+      {en:"bikini",cn:"比基尼"},{en:"swimsuit",cn:"泳装"},{en:"competition swimsuit",cn:"竞技泳衣"},{en:"school swimsuit",cn:"死库水"},
+      {en:"frilled bikini",cn:"花边比基尼"},{en:"sheer swimsuit",cn:"透视泳装"},{en:"monokini",cn:"开襟泳衣"},{en:"one-piece swimsuit",cn:"连体泳衣"},
+      {en:"swim briefs",cn:"泳裤"},{en:"backless swimsuit",cn:"露背泳衣"},{en:"lingerie",cn:"性感内衣"},{en:"underwear",cn:"内衣裤"},
+      {en:"panties",cn:"内裤"},{en:"bra",cn:"胸罩"},{en:"camisole",cn:"吊带衫"},{en:"see-through",cn:"透视装"},
+      {en:"cameltoe",cn:"贴身勾线"},{en:"naked apron",cn:"裸体围裙"},{en:"striped thighhighs",cn:"条纹过膝袜"},{en:"lace-trimmed thighhighs",cn:"蕾丝过膝袜"},
+      {en:"ankle socks",cn:"短袜"},{en:"striped socks",cn:"条纹袜"},
+  ]},
+  {cat: "🧘 姿势", tags: [
+      {en:"standing",cn:"站立"},{en:"sitting",cn:"坐着"},{en:"kneeling",cn:"跪坐"},{en:"lying",cn:"躺着"},
+      {en:"lying on back",cn:"仰躺"},{en:"on side",cn:"侧躺"},{en:"squatting",cn:"蹲着"},{en:"sitting on lap",cn:"坐在膝上"},
+      {en:"sitting on floor",cn:"席地而坐"},{en:"doing a split",cn:"劈叉"},{en:"seiza",cn:"正坐"},{en:"wariza",cn:"W坐"},
+      {en:"arms crossed",cn:"交叉手臂"},{en:"leaning forward",cn:"前倾"},{en:"leaning back",cn:"后仰"},
+  ]},
+  {cat: "🏃 动作", tags: [
+      {en:"walking",cn:"走路"},{en:"running",cn:"奔跑"},{en:"stretching",cn:"伸懒腰"},{en:"adjusting hair",cn:"撩头发"},
+      {en:"covering mouth",cn:"捂嘴"},{en:"hands together",cn:"双手合十"},{en:"arms behind back",cn:"手背后"},{en:"hands on hips",cn:"叉腰"},
+      {en:"arm up",cn:"举着手臂"},{en:"jumping",cn:"跳跃"},{en:"dancing",cn:"跳舞"},{en:"waving",cn:"挥手"},
+      {en:"peace sign",cn:"比V"},{en:"salute",cn:"敬礼"},{en:"reaching",cn:"伸手"},{en:"pointing",cn:"指向"},
+      {en:"clapping",cn:"拍手"},{en:"hugging",cn:"拥抱"},{en:"tiptoes",cn:"踮脚"},{en:"eating",cn:"吃东西"},
+      {en:"drinking",cn:"喝东西"},{en:"reading",cn:"看书"},{en:"sleeping",cn:"睡觉"},
+  ]},
+  {cat: "🎥 构图镜头", tags: [
+      {en:"portrait",cn:"头像特写"},{en:"upper body",cn:"半身像"},{en:"cowboy shot",cn:"七分身"},{en:"full body",cn:"全身像"},
+      {en:"head out of frame",cn:"头顶出画"},{en:"close-up",cn:"大特写"},{en:"from behind",cn:"从背后"},{en:"from above",cn:"俯拍"},
+      {en:"from below",cn:"仰拍"},{en:"profile",cn:"侧脸"},{en:"dutch angle",cn:"斜角构图"},{en:"wide shot",cn:"远景"},
+      {en:"facing viewer",cn:"面向镜头"},{en:"back turned",cn:"背对镜头"},{en:"pov",cn:"第一人称视角"},{en:"fisheye",cn:"鱼眼镜头"},
+  ]},
+  {cat: "🏠 室内场景", tags: [
+      {en:"indoors",cn:"室内"},{en:"classroom",cn:"教室"},{en:"bedroom",cn:"卧室"},{en:"library",cn:"图书馆"},
+      {en:"cafe",cn:"咖啡馆"},{en:"Japanese house",cn:"日式房屋"},{en:"kitchen",cn:"厨房"},{en:"bathroom",cn:"浴室"},
+      {en:"living room",cn:"客厅"},{en:"office",cn:"办公室"},{en:"hospital",cn:"医院"},{en:"elevator",cn:"电梯"},
+      {en:"stairs",cn:"楼梯"},{en:"shop",cn:"商店"},{en:"restaurant",cn:"餐馆"},{en:"church",cn:"教堂"},
+  ]},
+  {cat: "🌳 室外场景", tags: [
+      {en:"outdoors",cn:"室外"},{en:"beach",cn:"海滩"},{en:"ocean",cn:"大海"},{en:"forest",cn:"森林"},
+      {en:"mountains",cn:"群山"},{en:"cityscape",cn:"城市全景"},{en:"park",cn:"公园"},{en:"shrine",cn:"神社"},
+      {en:"rooftop",cn:"天台"},{en:"village",cn:"村落"},{en:"garden",cn:"庭院"},{en:"lake",cn:"湖边"},
+      {en:"water",cn:"水边"},{en:"street",cn:"街道"},{en:"bridge",cn:"桥"},{en:"river",cn:"河流"},
+      {en:"field",cn:"田野"},{en:"flower field",cn:"花田"},{en:"grass",cn:"草地"},{en:"desert",cn:"沙漠"},
+      {en:"poolside",cn:"泳池边"},{en:"playground",cn:"游乐场"},{en:"amusement park",cn:"游乐园"},{en:"alley",cn:"小巷"},
+  ]},
+  {cat: "🌦️ 天气 / 时段", tags: [
+      {en:"night",cn:"夜晚"},{en:"night sky",cn:"夜空"},{en:"sunset",cn:"日落"},{en:"sunrise",cn:"日出"},
+      {en:"starry sky",cn:"满天星星"},{en:"cherry blossoms",cn:"樱花"},{en:"rain",cn:"雨天"},{en:"snow",cn:"雪景"},
+      {en:"bonfire",cn:"篝火"},{en:"sky",cn:"天空"},{en:"cloud",cn:"云"},{en:"sun",cn:"太阳"},
+      {en:"moon",cn:"月亮"},{en:"fog",cn:"雾"},{en:"storm",cn:"暴风雨"},{en:"wind",cn:"风"},
+      {en:"fireworks",cn:"烟花"},{en:"festival",cn:"祭典"},{en:"summer",cn:"夏天"},{en:"autumn",cn:"秋天"},
+      {en:"winter",cn:"冬天"},
+  ]},
+  {cat: "💡 光影效果", tags: [
+      {en:"natural lighting",cn:"自然光"},{en:"backlighting",cn:"逆光"},{en:"cinematic lighting",cn:"电影级打光"},{en:"dramatic shadow",cn:"强烈明暗对比"},
+      {en:"glowing",cn:"发光"},{en:"light rays",cn:"光束"},{en:"silhouette",cn:"剪影"},{en:"dark",cn:"暗部为主"},
+      {en:"dappled sunlight",cn:"树荫斑驳光"},{en:"rim lighting",cn:"轮廓光"},{en:"lens flare",cn:"镜头光晕"},{en:"bokeh",cn:"虚化光斑"},
+      {en:"sunlight",cn:"阳光"},{en:"moonlight",cn:"月光"},{en:"candlelight",cn:"烛光"},{en:"spotlight",cn:"聚光灯"},
+  ]},
+  {cat: "🖌️ 画风质感", tags: [
+      {en:"absurdres",cn:"超高分辨率"},{en:"highres",cn:"高分辨率"},{en:"detailed background",cn:"高细节背景"},{en:"blurry background",cn:"背景虚化"},
+      {en:"depth of field",cn:"景深"},{en:"light particles",cn:"光粒子飘浮"},{en:"chromatic aberration",cn:"边缘色差"},{en:"film grain",cn:"胶片颗粒感"},
+      {en:"watercolor (medium)",cn:"水彩画风"},{en:"sketch (style)",cn:"素描线稿风"},{en:"lineart",cn:"线稿"},{en:"flat color",cn:"平涂上色"},
+      {en:"soft shading",cn:"柔和阴影"},{en:"detailed eyes",cn:"高细节眼睛"},{en:"detailed skin",cn:"高细节皮肤"},{en:"light novel illustration",cn:"轻小说插画质感"},
+      {en:"official art",cn:"官方设定级画质"},{en:"character sheet",cn:"人物设定图"},
+  ]},
+  {cat: "🧸 道具 / 动物", tags: [
+      {en:"cat",cn:"猫"},{en:"dog",cn:"狗"},{en:"phone",cn:"手机"},{en:"food",cn:"食物"},
+      {en:"books",cn:"书本"},{en:"flower",cn:"花"},{en:"leaf",cn:"树叶"},{en:"petals falling",cn:"花瓣飘落"},
+      {en:"holding",cn:"手持物品"},{en:"mask",cn:"口罩/面具"},{en:"glasses",cn:"眼镜"},{en:"cup",cn:"杯子"},
+      {en:"teddy bear",cn:"玩偶熊"},{en:"balloon",cn:"气球"},{en:"umbrella",cn:"雨伞"},
+  ]},
+  {cat: "💄 装饰 / 特征", tags: [
+      {en:"freckles",cn:"雀斑"},{en:"scar",cn:"伤疤"},{en:"tattoo",cn:"刺青"},{en:"earrings",cn:"耳环"},
+      {en:"necklace",cn:"项链"},{en:"hair ornament",cn:"发饰"},{en:"bracelet",cn:"手链"},{en:"ring",cn:"戒指"},
+  ]},
+  {cat: "🔞 R18 裸露 / 状态", cnsfw: true, tags: [
+      {en:"nsfw",cn:"不适宜内容总开关"},{en:"nude",cn:"全裸"},{en:"naked",cn:"无遮掩裸体"},{en:"completely nude",cn:"完全裸体"},
+      {en:"topless",cn:"上半身裸露"},{en:"bottomless",cn:"下半身裸露"},{en:"exposed breasts",cn:"裸露双乳"},{en:"sideboob",cn:"侧乳"},
+      {en:"underboob",cn:"乳下缘"},{en:"cleavage",cn:"乳沟"},{en:"navel",cn:"露肚脐"},{en:"wet",cn:"湿透"},
+      {en:"sweating",cn:"汗湿"},{en:"flushing",cn:"潮红"},{en:"arousal",cn:"情动状态"},{en:"orgasm",cn:"高潮"},
+      {en:"clothes pulled",cn:"衣物被扒开"},{en:"covering breasts",cn:"捂胸遮挡"},{en:"breast grab",cn:"抓揉胸部"},{en:"forbidden view",cn:"走光视角"},
+      {en:"tanned",cn:"小麦色肌肤"},{en:"embarrassed",cn:"慌张"},{en:"sweat",cn:"冒汗"},{en:"breathing",cn:"气喘"},
+      {en:"moaning",cn:"喘息"},{en:"afterglow",cn:"事后温存"},
+  ]},
+  {cat: "🔞 R18 液体 / 痕迹", cnsfw: true, tags: [
+      {en:"pussy juice",cn:"爱液"},{en:"pussy juice drip",cn:"爱液滴落"},{en:"cum",cn:"精液"},{en:"cumdrip",cn:"中出内射"},
+      {en:"facial",cn:"颜射"},{en:"lactation",cn:"哺乳"},{en:"milking",cn:"挤乳"},{en:"breast milk",cn:"泌乳"},
+      {en:"cum in mouth",cn:"口内射"},{en:"cum on body",cn:"射在身上"},{en:"cum on breasts",cn:"射在胸上"},{en:"cum on stomach",cn:"射在肚子上"},
+      {en:"cum on ass",cn:"射在臀上"},{en:"peeing",cn:"尿"},{en:"golden shower",cn:"黄金圣水"},
+  ]},
+  {cat: "🔞 R18 部位 / 曲线", cnsfw: true, tags: [
+      {en:"nipples",cn:"乳头清晰"},{en:"pink nipples",cn:"粉色乳头"},{en:"inverted nipples",cn:"内陷乳头"},{en:"areolae",cn:"乳晕"},
+      {en:"large areolae",cn:"大乳晕"},{en:"perky breasts",cn:"挺拔乳房"},{en:"breasts squeezed together",cn:"挤胸"},{en:"breasts apart",cn:"两乳分开"},
+      {en:"big penis",cn:"超大体格"},{en:"abs",cn:"腹肌轮廓"},{en:"lips",cn:"柔润嘴唇"},{en:"tongue",cn:"舌头"},
+      {en:"neck",cn:"脖颈"},{en:"nape",cn:"后颈"},{en:"collarbone",cn:"锁骨"},{en:"shoulder",cn:"香肩"},
+      {en:"bare shoulders",cn:"裸肩"},{en:"bare back",cn:"光滑美背"},{en:"armpits",cn:"腋下"},{en:"elbow",cn:"手肘"},
+      {en:"hands",cn:"玉手"},{en:"fingers",cn:"修长手指"},{en:"midriff",cn:"露腰"},{en:"hips",cn:"髋部"},
+      {en:"slim waist",cn:"细腰"},{en:"narrow waist",cn:"小蛮腰"},{en:"legs",cn:"腿部"},{en:"thighs",cn:"美腿"},
+      {en:"bare legs",cn:"裸腿"},{en:"legs together",cn:"双腿并拢"},{en:"calves",cn:"小腿线条"},{en:"ankles",cn:"脚踝"},
+      {en:"feet",cn:"足部特写"},{en:"toes",cn:"脚趾"},{en:"huge ass",cn:"翘臀"},{en:"beauty mark",cn:"美人痣"},
+      {en:"mole",cn:"性感小痣"},
+  ]},
+  {cat: "🔞 R18 身体特写", cnsfw: true, tags: [
+      {en:"breasts",cn:"胸部"},{en:"large breasts",cn:"巨乳"},{en:"medium breasts",cn:"中等胸部"},{en:"small breasts",cn:"贫乳"},
+      {en:"huge breasts",cn:"超巨乳"},{en:"sagging breasts",cn:"下垂胸"},{en:"puffy nipples",cn:"凸点乳"},{en:"erect nipples",cn:"坚挺乳头"},
+      {en:"genitals",cn:"私处（泛称）"},{en:"pussy",cn:"女性私处"},{en:"pussy lips",cn:"私处唇"},{en:"small labia",cn:"小巧唇"},
+      {en:"puffy labia",cn:"饱满厚唇"},{en:"clitoris",cn:"阴蒂"},{en:"clitoral hood",cn:"阴蒂帽"},{en:"pussy focus",cn:"私处特写构图"},
+      {en:"spread pussy",cn:"扒开私处"},{en:"mons pubis",cn:"耻部丘"},{en:"pubic hair",cn:"阴毛"},{en:"pubic hair stubble",cn:"短茬阴毛"},
+      {en:"gaping",cn:"扩张状态"},{en:"womb",cn:"子宫"},{en:"stomach bulge",cn:"腹部被顶起"},{en:"penis",cn:"男性私处"},
+      {en:"glans",cn:"龟头"},{en:"precum",cn:"前端渗液"},{en:"erection",cn:"勃起"},{en:"flaccid",cn:"疲软状态"},
+      {en:"circumcised",cn:"无包皮"},{en:"foreskin",cn:"带包皮"},{en:"testicles",cn:"睾丸"},{en:"anus",cn:"后穴"},
+      {en:"spread anus",cn:"掰开后穴"},{en:"ass",cn:"臀部"},{en:"wide hips",cn:"宽臀"},{en:"thick thighs",cn:"粗大腿"},
+      {en:"thigh gap",cn:"腿间缝隙"},{en:"plump",cn:"丰满体型"},{en:"curvy",cn:"曲线身材"},{en:"slim",cn:"纤细身材"},
+      {en:"hourglass figure",cn:"沙漏身材"},{en:"breast expansion",cn:"巨乳化"},{en:"nipple piercing",cn:"乳头穿孔"},
+  ]},
+  {cat: "🔞 R18 群体 / 关系", cnsfw: true, tags: [
+      {en:"threesome",cn:"三人行"},{en:"ffm threesome",cn:"两女一男"},{en:"mmf threesome",cn:"两男一女"},{en:"gangbang",cn:"轮姦"},
+      {en:"orgy",cn:"狂欢"},{en:"triple penetration",cn:"三重插入"},{en:"futanari",cn:"扶他"},{en:"kissing",cn:"接吻"},
+      {en:"grinding",cn:"贴身磨蹭"},{en:"grabbing another's breast",cn:"揪胸"},{en:"grabbing another's ass",cn:"揪臀"},
+  ]},
+  {cat: "🔞 R18 性行为 / 姿势", cnsfw: true, tags: [
+      {en:"sex",cn:"性行为"},{en:"vaginal",cn:"阴道插入"},{en:"anal",cn:"肛交"},{en:"oral",cn:"口部性行为"},
+      {en:"fellatio",cn:"口交"},{en:"cunnilingus",cn:"舔阴"},{en:"paizuri",cn:"乳交"},{en:"handjob",cn:"手交"},
+      {en:"footjob",cn:"足交"},{en:"thigh sex",cn:"素股"},{en:"masturbation",cn:"自慰"},{en:"fingering",cn:"指交"},
+      {en:"anal fingering",cn:"肛指"},{en:"mutual masturbation",cn:"相互自慰"},{en:"double penetration",cn:"双穴同插"},{en:"group sex",cn:"多人"},
+      {en:"bound",cn:"捆绑"},{en:"shibari",cn:"日式绳缚"},{en:"pregnant",cn:"怀孕"},{en:"standing sex",cn:"站立位"},
+      {en:"sex from behind",cn:"后入进行"},{en:"doggystyle",cn:"后入位"},{en:"cowgirl position",cn:"骑乘位"},{en:"reverse cowgirl position",cn:"反骑"},
+      {en:"missionary",cn:"正常位"},{en:"standing missionary",cn:"站立侧入"},{en:"prone bone",cn:"趴位"},{en:"mating press",cn:"压位"},
+      {en:"leg lock",cn:"锁腿"},{en:"clothed sex",cn:"有衣性交"},{en:"lotus position",cn:"莲花坐"},{en:"spooning",cn:"侧入"},
+      {en:"irrumatio",cn:"强制口交"},{en:"double fellatio",cn:"双人同时口交"},{en:"69",cn:"69 式"},{en:"ball sucking",cn:"吸吮睾丸"},
+      {en:"face sitting",cn:"坐脸"},{en:"standing cunnilingus",cn:"站立体口交"},{en:"double handjob",cn:"双人手交"},{en:"handjob from behind",cn:"后侧手交"},
+      {en:"handjob over clothes",cn:"隔衣手交"},{en:"thigh straddle",cn:"腿间夹位"},{en:"thigh straddling",cn:"跨骑大腿"},{en:"sex through torn clothes",cn:"撕破衣服性交"},
+      {en:"nipple flick",cn:"弹奶头"},{en:"nipple biting",cn:"咬乳头"},{en:"nipple fuck",cn:"奶头插入"},{en:"spread legs",cn:"分开双腿"},
+      {en:"all fours",cn:"四肢着地"},{en:"legs up",cn:"双腿高举"},
+  ]},
+  {cat: "🔞 R18 玩具 / 拘束", cnsfw: true, tags: [
+      {en:"sex toy",cn:"成人玩具"},{en:"dildo",cn:"棒状玩具"},{en:"vibrator",cn:"震动棒"},{en:"anal beads",cn:"后穴珠串"},
+      {en:"ball gag",cn:"口枷"},{en:"ring gag",cn:"环形口枷"},{en:"bit gag",cn:"咬杆口枷"},{en:"blindfold",cn:"蒙眼"},
+      {en:"leash",cn:"牵绳"},{en:"wrist restraints",cn:"手腕束缚"},{en:"rope",cn:"绳子"},{en:"bondage",cn:"拘束play"},
+      {en:"humiliation",cn:"羞耻play"},{en:"body writing",cn:"身体涂写文字"},{en:"object insertion",cn:"异物插入"},{en:"finger sucking",cn:"吮指"},
+      {en:"holding sex toy",cn:"握着玩具"},{en:"nipple clamps",cn:"奶头夹"},{en:"labia clamps",cn:"阴唇夹"},{en:"pussy clamps",cn:"私处夹"},
+      {en:"ball squeeze",cn:"睾丸挤压"},{en:"whip",cn:"皮鞭"},{en:"spanking",cn:"责打"},{en:"submission",cn:"臣服"},
+      {en:"bdsm",cn:"调教"},{en:"aphrodisiac",cn:"催情"},{en:"drugs",cn:"下药"},{en:"choker",cn:"颈链"},
+  ]},
+  {cat: "🔞 R18 服务 / 表情", cnsfw: true, tags: [
+      {en:"ahegao",cn:"阿黑颜"},{en:"rolling eyes",cn:"翻白眼"},{en:"tongue out",cn:"吐舌"},{en:"defloration",cn:"初夜"},
+      {en:"kneeling fellatio",cn:"跪式口交"},{en:"multiple blowjobs",cn:"多人口交"},{en:"multiple penetration",cn:"多插"},{en:"after sex",cn:"事后状态"},
+      {en:"breast feeding",cn:"喂乳"},{en:"deepthroat",cn:"深喉"},{en:"blowjob face",cn:"口交表情"},{en:"breast sucking",cn:"吸吮乳房"},
+      {en:"bukkake",cn:"集体颜射"},{en:"penis on face",cn:"贴脸特写"},{en:"saliva",cn:"口涎"},{en:"drooling",cn:"口水失控"},
+      {en:"licking lips",cn:"舔唇"},{en:"cumshot",cn:"射精特写"},{en:"internal cumshot",cn:"内射瞬间"},{en:"oral cumshot",cn:"口头射精"},
+      {en:"saliva string",cn:"口涎丝"},{en:"saliva drip",cn:"口涎滴落"},{en:"saliva swap",cn:"舌吻交换"},{en:"excessive saliva",cn:"口水泛滥"},
+      {en:"saliva on penis",cn:"阳具挂涎"},{en:"cum on tongue",cn:"舌头上的精液"},{en:"cum pool",cn:"精液池"},
+  ]},
+  {cat: "🔞 R18 过激表现", cnsfw: true, tags: [
+      {en:"x-ray",cn:"透视展示"},{en:"cross-section",cn:"断面图"},{en:"internal view",cn:"内部视角"},{en:"rape",cn:"强暴"},
+      {en:"forced",cn:"强迫"},{en:"mind break",cn:"洗脑"},
+  ]},
+  {cat: "🔞 R18 场景 / 公共", cnsfw: true, tags: [
+      {en:"bathing",cn:"出浴"},{en:"onsen",cn:"温泉"},{en:"soap",cn:"泡澡"},{en:"underwater sex",cn:"水下性行为"},
+      {en:"exhibitionism",cn:"公共露出"},{en:"voyeurism",cn:"偷窥"},{en:"public use",cn:"公共使用"},{en:"love hotel",cn:"情侣酒店"},
+  ]},
+  {cat: "🔞 R18 情趣 / 内着", cnsfw: true, tags: [
+      {en:"oiled",cn:"抹油"},{en:"naked shirt",cn:"全裸衬衫"},{en:"naked ribbon",cn:"裸领带"},{en:"naked cape",cn:"全裸披风"},
+      {en:"nude filter",cn:"裸滤镜"},{en:"wet clothes",cn:"湿身"},{en:"wet shirt",cn:"湿透衬衫"},{en:"dripping",cn:"滴水"},
+      {en:"corset",cn:"束身衣"},{en:"cross-laced corset",cn:"十字系带束身"},{en:"bodystocking",cn:"连体网衣"},{en:"crotchless",cn:"开裆"},
+      {en:"babydoll",cn:"吊带睡裙"},{en:"negligee",cn:"睡裙"},{en:"fishnet pantyhose",cn:"渔网裤袜"},{en:"fishnet bodysuit",cn:"渔网紧身衣"},
+      {en:"thong",cn:"丁字裤"},{en:"string panties",cn:"系带内裤"},{en:"side-tie panties",cn:"侧系内裤"},{en:"no bra",cn:"无胸罩"},
+      {en:"no panties",cn:"无内裤"},{en:"panty pull",cn:"拉扯内裤"},{en:"panties around one leg",cn:"腿上内裤"},{en:"hand in own panties",cn:"把手放进内裤"},
+      {en:"crotch rub",cn:"揉搓裆部"},{en:"bra pull",cn:"揪开胸罩"},{en:"lace bra",cn:"蕾丝胸罩"},{en:"lace garter belt",cn:"蕾丝吊袜带"},
+      {en:"shirt lift",cn:"撩起衣物"},{en:"lifted by self",cn:"自己掀起"},{en:"open fly",cn:"拉链半开"},{en:"open shirt",cn:"敞开衬衫"},
+      {en:"open clothes",cn:"敞开衣襟"},{en:"open pajamas",cn:"敞开睡衣"},{en:"skirt lift",cn:"撩起裙摆"},{en:"swimsuit pull",cn:"泳衣拉扯"},
+      {en:"swimsuit lift",cn:"泳衣掀起"},{en:"swimsuit down",cn:"泳衣褪下"},{en:"torn bikini",cn:"撕破比基尼"},{en:"torn pantyhose",cn:"撕破裤袜"},
+      {en:"bikini bottom pull",cn:"拉扯泳裤"},{en:"bunnysuit",cn:"兔女郎装"},{en:"micro bikini",cn:"微型比基尼"},{en:"sling bikini",cn:"绳系比基尼"},
+      {en:"side-tie bikini",cn:"侧系比基尼"},{en:"crotchless bodysuit",cn:"开裆连体衣"},
+  ]},
+];
+
+/* ============ 渲染标签面板 ============ */
+const tagbody = document.getElementById("tagbody");
+function renderTagPanel() {
+  tagbody.innerHTML = "";
+  TAG_DB.forEach((g, gi) => {
+    const div = document.createElement("div");
+    div.className = "cat"; div.dataset.gi = gi;
+    if (g.cnsfw) div.dataset.cnsfw = "1";
+    const name = document.createElement("div");
+    name.className = "catname"; name.textContent = g.cat;
+    const chips = document.createElement("div");
+    chips.className = "chips";
+    g.tags.forEach(o => {
+      const c = document.createElement("span");
+      c.className = "chip" + (g.cnsfw ? " nsfwcat" : "");
+      c.innerHTML = "<b>" + o.en + "</b><span class=\"cn\">" + o.cn + "</span>";
+      c.dataset.tag = o.en; c.dataset.cn = o.cn; c.dataset.gi = gi;
+      c.onclick = () => toggleTag(o.en);
+      chips.appendChild(c);
+    });
+    div.appendChild(name); div.appendChild(chips);
+    tagbody.appendChild(div);
+  });
+  applyRatingVisibility();
+  const q = document.getElementById("tagsearch").value;
+  if (q) document.getElementById("tagsearch").dispatchEvent(new Event("input"));
+}
+renderTagPanel();
+/* 词库以 tags_data.json 为准 (编辑器保存后的持久版); 拉取失败则用内置兜底 */
+fetch("/tagsdata").then(r => r.json()).then(j => {
+  if (j && Array.isArray(j.tag_db) && j.tag_db.length) {
+    TAG_DB.length = 0;
+    j.tag_db.forEach(g => TAG_DB.push(g));
+    renderTagPanel();
+  }
+}).catch(() => {});
+
+function posTokens() {
+  const p = document.getElementById("positive").value;
+  return p.split(",").map(s => s.trim()).filter(Boolean);
+}
+function refreshSel() {
+  const set = new Set(posTokens());
+  document.querySelectorAll(".chip").forEach(ch => {
+    ch.classList.toggle("sel", set.has(ch.dataset.tag));
+  });
+}
+function toggleTag(tag) {
+  const ta = document.getElementById("positive");
+  let toks = posTokens();
+  if (toks.includes(tag)) {
+    toks = toks.filter(t => t !== tag);
+  } else {
+    toks.push(tag);
+  }
+  ta.value = toks.join(", ");
+  refreshSel();
+}
+/* sync selection when user edits manually */
+document.getElementById("positive").addEventListener("input", refreshSel);
+refreshSel();
+
+/* 搜索过滤 */
+document.getElementById("tagsearch").addEventListener("input", e => {
+  const q = e.target.value.trim().toLowerCase();
+  const r18on = document.getElementById("rating").value === "nsfw, rating:explicit";
+  document.querySelectorAll(".cat").forEach(catDiv => {
+    let any = false;
+    const cnsfwCat = catDiv.dataset.cnsfw === "1";
+    catDiv.querySelectorAll(".chip").forEach(ch => {
+      const hit = !q || ch.dataset.tag.toLowerCase().includes(q) || ch.dataset.cn.includes(q);
+      const allowed = !cnsfwCat || r18on;
+      ch.style.display = (hit && allowed) ? "inline-block" : "none";
+      if (hit && allowed) any = true;
+    });
+    catDiv.style.display = any ? "block" : "none";
+  });
+});
+
+/* ---- 词库编辑器 (按组增删) ---- */
+let edWorking = null;
+const BLOCK_TAGS = new Set(["loli", "shota", "child", "children", "kid", "toddler",
+  "toddlercon", "lolicon", "shotacon", "little girl", "young girl"]);
+function edStatus(msg, ok) {
+  const el = document.getElementById("edStatus");
+  el.textContent = msg; el.style.color = ok ? "#34d399" : "#ff7b6b";
+}
+const edEditor = document.getElementById("tageditor");
+edEditor.addEventListener("toggle", () => {
+  if (edEditor.open && !edWorking) {
+    edWorking = JSON.parse(JSON.stringify(TAG_DB));
+    edFillGroups();
+  }
+});
+function edFillGroups(keep) {
+  const sel = document.getElementById("edGroup");
+  const cur = (keep !== undefined) ? keep : (+sel.value || 0);
+  sel.innerHTML = "";
+  edWorking.forEach((g, i) => {
+    const op = document.createElement("option");
+    op.value = i; op.textContent = g.cat + " · " + g.tags.length + " 个";
+    sel.appendChild(op);
+  });
+  sel.value = Math.min(cur, edWorking.length - 1);
+  edRenderChips();
+}
+function edRenderChips() {
+  const gi = +document.getElementById("edGroup").value || 0;
+  const box = document.getElementById("edChips");
+  box.innerHTML = "";
+  const g = edWorking[gi];
+  if (!g || !g.tags.length) {
+    box.innerHTML = "<span class='placeholder'>此组暂无标签，下方可添加</span>";
+    return;
+  }
+  g.tags.forEach((o, ti) => {
+    const c = document.createElement("span");
+    c.className = "chip" + (g.cnsfw ? " nsfwcat" : "");
+    c.innerHTML = "<b>" + o.en + "</b><span class=\"cn\">" + o.cn + "</span>";
+    const x = document.createElement("span");
+    x.textContent = " ✕"; x.style.cssText = "color:#ff7b6b;cursor:pointer;font-weight:700;";
+    x.onclick = (e) => {
+      e.stopPropagation();
+      if (o.en === "nsfw") { edStatus("nsfw 总开关不可删除"); return; }
+      g.tags.splice(ti, 1);
+      edFillGroups(gi); edRenderChips();
+    };
+    c.appendChild(x);
+    box.appendChild(c);
+  });
+}
+document.getElementById("edGroup").addEventListener("change", edRenderChips);
+document.getElementById("edAdd").onclick = () => {
+  const gi = +document.getElementById("edGroup").value || 0;
+  const cn = document.getElementById("edCN").value.trim();
+  const en = document.getElementById("edEN").value.trim().toLowerCase();
+  if (!cn || !en) return edStatus("中文名和英文 tag 都要填");
+  if (/[,"]/.test(en) || /["]/.test(cn)) return edStatus("tag 不能含逗号或双引号");
+  if (BLOCK_TAGS.has(en)) return edStatus("涉及未成年内容的 tag 禁止添加");
+  if (edWorking.some(g => g.tags.some(t => t.en === en))) return edStatus("已存在: " + en);
+  edWorking[gi].tags.push({ en, cn });
+  document.getElementById("edCN").value = "";
+  document.getElementById("edEN").value = "";
+  edFillGroups(gi);
+  edStatus("已加入「" + edWorking[gi].cat + "」，保存后生效", true);
+};
+document.getElementById("edSave").onclick = async () => {
+  try {
+    const r = await fetch("/tagsdata", { method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tag_db: edWorking }) });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || ("HTTP " + r.status));
+    TAG_DB.length = 0;
+    edWorking.forEach(g => TAG_DB.push(g));
+    edWorking = JSON.parse(JSON.stringify(TAG_DB));
+    renderTagPanel();
+    edFillGroups(+document.getElementById("edGroup").value || 0);
+    edStatus("已保存 ✓ " + j.groups + " 组 / " + j.tags + " 个（桌面版重启后同步）", true);
+  } catch (e) { edStatus("保存失败: " + e.message); }
+};
+
+/* 分级联动: R18 时自动注入 nsfw tag; 非 R18 时隐藏成人向分类并移除成人向 tag */
+function applyRatingVisibility() {
+  const r18on = document.getElementById("rating").value === "nsfw, rating:explicit";
+  document.querySelectorAll(".cat[data-cnsfw='1']").forEach(d => {
+    d.style.display = r18on ? "block" : "none";
+  });
+  if (r18on) addNsfwTag();
+  else removeCnsfwTags();
+}
+function addNsfwTag() {
+  const ta = document.getElementById("positive");
+  if (!posTokens().includes("nsfw")) {
+    ta.value = posTokens().concat(["nsfw"]).join(", ");
+    refreshSel();
+  }
+}
+function removeCnsfwTags() {
+  const cnsfwTags = new Set(["nsfw"]);
+  TAG_DB.forEach(g => { if (g.cnsfw) g.tags.forEach(o => cnsfwTags.add(o.en)); });
+  const ta = document.getElementById("positive");
+  const kept = posTokens().filter(t => !cnsfwTags.has(t));
+  if (kept.length !== posTokens().length) {
+    ta.value = kept.join(", ");
+    refreshSel();
+  }
+}
+document.getElementById("rating").addEventListener("change", applyRatingVisibility);
+applyRatingVisibility();
+
+/* 清空正面提示词 */
+document.getElementById("clearpos").onclick = () => {
+  document.getElementById("positive").value = "";
+  refreshSel();
+};
+
+/* ============ 语义关联词典（本地扩展用） ============ */
+const ASSOC = {
+  "cherry blossoms": ["petals falling", "pink flower", "spring", "outdoors"],
+  "beach": ["ocean", "sand", "outdoors", "summer", "horizon"],
+  "night": ["night sky", "starry sky", "moon", "dark"],
+  "rain": ["wet", "wet clothes", "umbrella", "water drops"],
+  "kimono": ["japanese clothes", "obi", "wide sleeves"],
+  "yukata": ["japanese clothes", "obi", "summer"],
+  "school uniform": ["pleated skirt", "collared shirt", "indoors"],
+  "sailor uniform": ["serafuku", "pleated skirt", "neckerchief"],
+  "maid": ["maid apron", "maid headdress", "frills", "thighhighs"],
+  "classroom": ["desk", "chair", "indoors", "window", "school"],
+  "cafe": ["indoors", "coffee cup", "table", "window"],
+  "fireworks": ["night sky", "night", "summer", "outdoors"],
+  "shrine": ["torii", "japanese house", "outdoors", "stairs"],
+  "snow": ["snowflakes", "winter clothes", "outdoors", "breath"],
+  "sunset": ["evening", "orange sky", "silhouette"],
+  "bedroom": ["bed", "indoors", "window", "sheets"],
+  "bed": ["bed sheet", "pillow", "indoors", "lying"],
+  "ocean": ["waves", "horizon", "beach", "sky"],
+  "forest": ["trees", "nature", "dappled sunlight", "outdoors"],
+  "rooftop": ["guardrail", "outdoors", "cityscape", "sky"],
+  "miko": ["kimono", "shrine", "japanese clothes"],
+  "china dress": ["china dress", "bare shoulders"],
+  "swimsuit": ["bare shoulders", "bare legs", "outdoors"],
+  "bikini": ["swimsuit", "bare shoulders", "beach"],
+  "thighhighs": ["zettai ryouiki", "skirt"],
+  "cat ears": ["cat tail", "animal ear fluff"],
+  "umbrella": ["rain", "holding", "wet"],
+  "coffee cup": ["cafe", "holding cup", "sitting"],
+  "ice cream": ["food", "holding", "licking"],
+  "nurse": ["nurse cap", "hospital", "uniform"],
+  "office lady": ["shirt", "pencil skirt", "indoors"],
+  "winter clothes": ["scarf", "coat", "snow", "cold"],
+  "starry sky": ["night", "outdoors"],
+};
+
+/* ============ 自然语言 → 标准提示词 ============ */
+const SYN = [
+  ["女孩","1girl"],["女生","1girl"],["少女","1girl"],["小姑娘","1girl"],
+  ["她","1girl"],["男孩","1boy"],["男生","1boy"],["少年","1boy"],
+  ["他","1boy"],["两个女孩","2girls"],["一男一女","hetero"],["男女","hetero"],
+  ["情侣","couple"],["单人","solo"],["一个人","solo"],["多个女孩","multiple girls"],
+  ["几个女孩","multiple girls"],["成熟女性","mature female"],["御姐","mature female"],["成熟男人","mature male"],
+  ["写实","realistic"],["高挑","tall"],["娇小","short"],["丰满","plump"],
+  ["曲线身材","curvy"],["长发","long hair"],["短发","short hair"],["中长发","medium hair"],
+  ["双马尾","twintails"],["马尾","ponytail"],["低马尾","low ponytail"],["麻花辫","single braid"],
+  ["发髻","hair bun"],["丸子头","hair bun"],["凌乱","messy hair"],["卷发","curly hair"],
+  ["直发","straight hair"],["金发","blonde"],["棕发","brown hair"],["黑发","black hair"],
+  ["红发","red hair"],["蓝发","blue hair"],["粉发","pink hair"],["白发","white hair"],
+  ["银发","silver hair"],["渐变发色","gradient hair"],["呆毛","ahoge"],["刘海","bangs"],
+  ["侧马尾","side ponytail"],["公主切","hime cut"],["蓝眼睛","blue eyes"],["蓝眼","blue eyes"],
+  ["红眼睛","red eyes"],["红眼","red eyes"],["棕眼睛","brown eyes"],["绿眼睛","green eyes"],
+  ["紫眼睛","purple eyes"],["异色瞳","heterochromia"],["吊眼","tsurime"],["垂眼","tareme"],
+  ["半睁眼","half-closed eyes"],["微笑","smile"],["浅笑","light smile"],["咧嘴笑","grin"],
+  ["张嘴","open mouth"],["闭嘴","closed mouth"],["脸红","blush"],["皱眉","frown"],
+  ["坏笑","smirk"],["嘟嘴","pout"],["含泪","tears"],["眨眼","wink"],
+  ["看镜头","looking at viewer"],["看向观众","looking at viewer"],["看这边","looking at viewer"],["回头","looking back"],
+  ["歪头","head tilt"],["校服","school uniform"],["水手服","sailor uniform"],["西装外套","blazer"],
+  ["开衫","cardigan"],["衬衫","shirt"],["白衬衫","white shirt"],["连衣裙","dress"],
+  ["礼服","gown"],["吊带长裙","sundress"],["百褶裙","pleated skirt"],["迷你裙","miniskirt"],
+  ["短裙","skirt"],["领带","necktie"],["丝带","ribbon"],["连帽衫","hoodie"],
+  ["夹克","jacket"],["大衣","coat"],["毛衣","sweater"],["高领毛衣","turtleneck"],
+  ["长筒袜","stockings"],["过膝袜","thighhighs"],["连裤袜","pantyhose"],["渔网袜","fishnet thighhighs"],
+  ["吊袜带","garter straps"],["短靴","ankle boots"],["长靴","knee boots"],["运动鞋","sneakers"],
+  ["眼镜","glasses"],["比基尼","bikini"],["泳装","swimsuit"],["泳衣","swimsuit"],
+  ["竞技泳衣","competition swimsuit"],["死库水","school swimsuit"],["内衣","underwear"],["内裤","panties"],
+  ["胸罩","bra"],["吊带衫","camisole"],["透视","see-through"],["围裙","naked apron"],
+  ["全裸","nude"],["裸体","nude"],["上半身裸露","topless"],["下半身裸露","bottomless"],
+  ["裸露双乳","exposed breasts"],["乳头","nipples"],["乳沟","cleavage"],["乳晕","areolae"],
+  ["湿透","wet"],["汗湿","sweating"],["潮红","flushing"],["情动","arousal"],
+  ["爱液","pussy juice"],["中出","creampie"],["颜射","facial"],["高潮","orgasm"],
+  ["做爱","sex"],["性行为","sex"],["口交","fellatio"],["乳交","paizuri"],
+  ["手交","handjob"],["足交","footjob"],["后入","doggystyle"],["骑乘","cowgirl position"],
+  ["正常位","missionary"],["分开双腿","spread legs"],["自慰","masturbation"],["指交","fingering"],
+  ["阿黑颜","ahegao"],["翻白眼","rolling eyes"],["吐舌","tongue out"],["蒙眼","blindfold"],
+  ["口枷","ball gag"],["项圈","collar"],["捆绑","bound"],["绳缚","shibari"],
+  ["玩具","sex toy"],["震动棒","vibrator"],["巨乳","large breasts"],["贫乳","small breasts"],
+  ["大胸","large breasts"],["站立","standing"],["站着","standing"],["站","standing"],
+  ["坐着","sitting"],["坐","sitting"],["坐在地上","sitting on floor"],["跪坐","kneeling"],
+  ["跪","kneeling"],["躺着","lying"],["躺","lying"],["侧躺","on side"],
+  ["蹲","squatting"],["走路","walking"],["奔跑","running"],["举手","arm up"],
+  ["背手","arms behind back"],["双手合十","hands together"],["捂嘴","covering mouth"],["叉腰","hands on hips"],
+  ["劈叉","doing a split"],["撩头发","adjusting hair"],["头像特写","portrait"],["半身像","upper body"],
+  ["上半身","upper body"],["七分身","cowboy shot"],["全身像","full body"],["全身","full body"],
+  ["大特写","close-up"],["特写","close-up"],["从背后","from behind"],["背后","from behind"],
+  ["俯拍","from above"],["仰拍","from below"],["侧脸","profile"],["斜角构图","dutch angle"],
+  ["远景","wide shot"],["面向镜头","facing viewer"],["背对镜头","back turned"],["室内","indoors"],
+  ["室外","outdoors"],["教室","classroom"],["卧室","bedroom"],["海滩","beach"],
+  ["海边","beach"],["大海","ocean"],["森林","forest"],["群山","mountains"],
+  ["城市","cityscape"],["公园","park"],["咖啡馆","cafe"],["神社","shrine"],
+  ["天台","rooftop"],["夜晚","night"],["夜里","night"],["夜空","night sky"],
+  ["日落","sunset"],["黄昏","sunset"],["日出","sunrise"],["樱花","cherry blossoms"],
+  ["下雨","rain"],["雨天","rain"],["雪景","snow"],["满天星","starry sky"],
+  ["星空","starry sky"],["篝火","bonfire"],["村落","village"],["庭院","garden"],
+  ["图书馆","library"],["湖边","lake"],["水边","water"],["花","flower"],
+  ["花瓣飘落","petals falling"],["月亮","moon"],["逆光","backlighting"],["电影级打光","cinematic lighting"],
+  ["剪影","silhouette"],["景深","depth of field"],["虚化","bokeh"],["自然光","natural lighting"],
+  ["超高分辨率","absurdres"],["高分辨率","highres"],["细节背景","detailed background"],["背景虚化","blurry background"],
+  ["光粒子","light particles"],["胶片颗粒感","film grain"],["轻小说插画质感","light novel illustration"],["官方画质","official art"],
+  ["上半身裸","topless"],["下半身裸","bottomless"],["裸露胸口","topless"],["奶子","breasts"],
+  ["挺拔乳房","perky breasts"],["挤胸","breasts squeezed together"],["两乳分开","breasts apart"],["吮乳头","breast sucking"],
+  ["奶水","lactation"],["泌乳","breast milk"],["扬乳","underboob"],["侧乳","sideboob"],
+  ["锁骨","collarbone"],["小蛮腰","narrow waist"],["身材有肉","plump"],["翘臀","huge ass"],
+  ["粗腿","thick thighs"],["美腿","thighs"],["腿环","thighhighs"],["裸腿","bare legs"],
+  ["张开双腿","spread legs"],["双腿并拢","legs together"],["抬腿","legs up"],["秘部","pussy"],
+  ["阴蒂","clitoris"],["肉棒","penis"],["睾丸","testicles"],["后穴","anus"],
+  ["后穴扩张","gaping"],["插入","vaginal"],["传教士","missionary"],["背后位","sex from behind"],
+  ["反骑","reverse cowgirl position"],["站立式","standing sex"],["站立侧入","standing missionary"],["趴位","prone bone"],
+  ["压位","mating press"],["锁腿","leg lock"],["有衣性交","clothed sex"],["莲花坐","lotus position"],
+  ["侧入","spooning"],["含住","oral"],["深喉","deepthroat"],["强制口交","irrumatio"],
+  ["双人同时口交","double fellatio"],["互相自慰","mutual masturbation"],["吮指","finger sucking"],["假阳具","dildo"],
+  ["跳蛋","vibrator"],["使用道具","object insertion"],["握着玩具","holding sex toy"],["内射","cumdrip"],
+  ["口内射","cum in mouth"],["射在身上","cum on body"],["射在胸上","cum on breasts"],["射在肚子上","cum on stomach"],
+  ["射在臀上","cum on ass"],["肛交","anal"],["双重插入","double penetration"],["三重插入","triple penetration"],
+  ["舔阴","cunnilingus"],["失神高潮","orgasm"],["三人行","threesome"],["两女一男","ffm threesome"],
+  ["两男一女","mmf threesome"],["群交","group sex"],["轮姦","gangbang"],["集体颜射","bukkake"],
+  ["狂欢","orgy"],["足部性行为","footjob"],["束缚","bondage"],["绳子","rope"],
+  ["调教","bdsm"],["球形口枷","ball gag"],["环形口枷","ring gag"],["咬杆口枷","bit gag"],
+  ["眼罩","blindfold"],["牵引绳","leash"],["颈链","choker"],["皮鞭","whip"],
+  ["责打","spanking"],["臣服","submission"],["慌张","embarrassed"],["冒汗","sweat"],
+  ["气喘","breathing"],["喘息","moaning"],["尿","peeing"],["潮吹","pussy juice"],
+  ["黄金圣水","golden shower"],["催情","aphrodisiac"],["下药","drugs"],["强暴","rape"],
+  ["强迫","forced"],["羞辱","humiliation"],["洗脑","mind break"],["出浴","bathing"],
+  ["温泉","onsen"],["泡澡","soap"],["抹油","oiled"],["水下性行为","underwater sex"],
+  ["裸围裙","naked apron"],["全裸衬衫","naked shirt"],["裸领带","naked ribbon"],["全裸披风","naked cape"],
+  ["裸滤镜","nude filter"],["湿身","wet clothes"],["湿透衬衫","wet shirt"],["滴水","dripping"],
+  ["情趣内衣","lingerie"],["束身衣","corset"],["连体网衣","bodystocking"],["开裆","crotchless"],
+  ["吊带睡裙","babydoll"],["睡裙","negligee"],["袜带","garter straps"],["渔网裤袜","fishnet pantyhose"],
+  ["丁字裤","thong"],["系带内裤","string panties"],["侧系内裤","side-tie panties"],["无胸罩","no bra"],
+  ["无内裤","no panties"],["拉扯内裤","panty pull"],["腿上内裤","panties around one leg"],["把手放进内裤","hand in own panties"],
+  ["揉搓裆部","crotch rub"],["揪开胸罩","bra pull"],["公共露出","exhibitionism"],["偷窥","voyeurism"],
+  ["公共使用","public use"],["情侣酒店","love hotel"],["事后温存","afterglow"],["事后","after sex"],
+  ["扶他","futanari"],["熟女","mature female"],["熟男","mature male"],["双人男性","2boys"],
+  ["三人女性","3girls"],["真实质感皮肤","lifelike skin"],["超长发","very long hair"],["麻花马尾","braided ponytail"],
+  ["双丸子头","double bun"],["尖发","spiky hair"],["眉间发丝","hair between eyes"],["侧发","sidelocks"],
+  ["螺旋卷","drill hair"],["垂环卷","ringlets"],["发束","hair intakes"],["飘发","floating hair"],
+  ["发环","hair rings"],["发夹","hairclip"],["发间花","hair flower"],["橙发","orange hair"],
+  ["水蓝发","aqua hair"],["绿发","green hair"],["紫发","purple hair"],["灰发","grey hair"],
+  ["多色头发","multicolored hair"],["双色发","two-tone hair"],["挑染","streaked hair"],["内层彩色","colored inner hair"],
+  ["水蓝眼","aqua eyes"],["橙瞳","orange eyes"],["粉瞳","pink eyes"],["灰瞳","grey eyes"],
+  ["闭眼","closed eyes"],["空洞眼神","empty eyes"],["大笑","laughing"],["哭泣","crying"],
+  ["生气","angry"],["惊讶","surprised"],["无表情","expressionless"],["严肃","serious"],
+  ["打哈欠","yawning"],["咬牙","gritted teeth"],["开心","happy"],["难过","sad"],
+  ["看向别处","looking away"],["女式衬衫","blouse"],["正装衬衫","dress shirt"],["T恤","t-shirt"],
+  ["背心","tank top"],["马甲","vest"],["露脐上衣","crop top"],["露肩装","off shoulder"],
+  ["露肩毛衣","off-shoulder sweater"],["无袖衬衫","sleeveless shirt"],["无袖连帽衫","sleeveless hoodie"],["卫衣","sweatshirt"],
+  ["连体紧身衣","bodysuit"],["长裙","long skirt"],["铅笔裙","pencil skirt"],["叠层裙","layered skirt"],
+  ["牛仔短裤","denim shorts"],["热裤","hotpants"],["工装裤","cargo pants"],["牛仔裤","jeans"],
+  ["大衣披肩","coat on shoulders"],["风衣","trench coat"],["牛仔夹克","denim jacket"],["飞行夹克","bomber jacket"],
+  ["西装","business suit"],["套装裤","pantsuit"],["夏日连衣裙","summer dress"],["长睡裙","nightgown"],
+  ["短睡裙","nightie"],["睡衣","pajamas"],["浴袍","bathrobe"],["和服","kimono"],
+  ["浴衣","yukata"],["袴","hakama"],["旗袍","cheongsam"],["日式水手服","serafuku"],
+  ["女仆装","maid costume"],["女仆发饰","maid headdress"],["女仆围裙","maid apron"],["护士帽","nurse cap"],
+  ["护士服","nurse outfit"],["警服","police uniform"],["军装","military uniform"],["空姐装","flight attendant"],
+  ["领结","bow tie"],["背带","suspenders"],["腰带","belt"],["围巾","scarf"],
+  ["帽子","hat"],["贝雷帽","beret"],["女巫帽","witch hat"],["高礼帽","top hat"],
+  ["毛线帽","beanie"],["遮阳帽","sun hat"],["手套","gloves"],["露指手套","fingerless gloves"],
+  ["臂套","arm warmers"],["腿套","leg warmers"],["鞋子入画","footwear visible"],["腰围浴巾","towel around waist"],
+  ["花边比基尼","frilled bikini"],["透视泳装","sheer swimsuit"],["开襟泳衣","monokini"],["连体泳衣","one-piece swimsuit"],
+  ["泳裤","swim briefs"],["露背泳衣","backless swimsuit"],["贴身勾线","cameltoe"],["条纹过膝袜","striped thighhighs"],
+  ["蕾丝过膝袜","lace-trimmed thighhighs"],["短袜","ankle socks"],["条纹袜","striped socks"],["仰躺","lying on back"],
+  ["坐在膝上","sitting on lap"],["正坐","seiza"],["W坐","wariza"],["交叉手臂","arms crossed"],
+  ["前倾","leaning forward"],["后仰","leaning back"],["伸懒腰","stretching"],["跳跃","jumping"],
+  ["跳舞","dancing"],["挥手","waving"],["比V","peace sign"],["敬礼","salute"],
+  ["伸手","reaching"],["指向","pointing"],["拍手","clapping"],["拥抱","hugging"],
+  ["踮脚","tiptoes"],["吃东西","eating"],["喝东西","drinking"],["看书","reading"],
+  ["睡觉","sleeping"],["头顶出画","head out of frame"],["第一人称视角","pov"],["鱼眼镜头","fisheye"],
+  ["日式房屋","Japanese house"],["厨房","kitchen"],["浴室","bathroom"],["客厅","living room"],
+  ["办公室","office"],["医院","hospital"],["电梯","elevator"],["楼梯","stairs"],
+  ["商店","shop"],["餐馆","restaurant"],["教堂","church"],["街道","street"],
+  ["桥","bridge"],["河流","river"],["田野","field"],["花田","flower field"],
+  ["草地","grass"],["沙漠","desert"],["泳池边","poolside"],["游乐场","playground"],
+  ["游乐园","amusement park"],["小巷","alley"],["天空","sky"],["云","cloud"],
+  ["太阳","sun"],["雾","fog"],["暴风雨","storm"],["风","wind"],
+  ["烟花","fireworks"],["祭典","festival"],["夏天","summer"],["秋天","autumn"],
+  ["冬天","winter"],["强烈明暗对比","dramatic shadow"],["发光","glowing"],["光束","light rays"],
+  ["暗部为主","dark"],["树荫斑驳光","dappled sunlight"],["轮廓光","rim lighting"],["镜头光晕","lens flare"],
+  ["阳光","sunlight"],["月光","moonlight"],["烛光","candlelight"],["聚光灯","spotlight"],
+  ["边缘色差","chromatic aberration"],["水彩画风","watercolor (medium)"],["素描线稿风","sketch (style)"],["线稿","lineart"],
+  ["平涂上色","flat color"],["柔和阴影","soft shading"],["高细节眼睛","detailed eyes"],["高细节皮肤","detailed skin"],
+  ["人物设定图","character sheet"],["猫","cat"],["狗","dog"],["手机","phone"],
+  ["食物","food"],["书本","books"],["树叶","leaf"],["手持物品","holding"],
+  ["口罩/面具","mask"],["杯子","cup"],["玩偶熊","teddy bear"],["气球","balloon"],
+  ["雨伞","umbrella"],["雀斑","freckles"],["伤疤","scar"],["刺青","tattoo"],
+  ["耳环","earrings"],["项链","necklace"],["发饰","hair ornament"],["手链","bracelet"],
+  ["戒指","ring"],["不适宜内容总开关","nsfw"],["无遮掩裸体","naked"],["完全裸体","completely nude"],
+  ["露肚脐","navel"],["衣物被扒开","clothes pulled"],["捂胸遮挡","covering breasts"],["抓揉胸部","breast grab"],
+  ["走光视角","forbidden view"],["小麦色肌肤","tanned"],["爱液滴落","pussy juice drip"],["精液","cum"],
+  ["挤乳","milking"],["粉色乳头","pink nipples"],["内陷乳头","inverted nipples"],["大乳晕","large areolae"],
+  ["超大体格","big penis"],["腹肌轮廓","abs"],["柔润嘴唇","lips"],["舌头","tongue"],
+  ["脖颈","neck"],["后颈","nape"],["香肩","shoulder"],["裸肩","bare shoulders"],
+  ["光滑美背","bare back"],["腋下","armpits"],["手肘","elbow"],["玉手","hands"],
+  ["修长手指","fingers"],["露腰","midriff"],["髋部","hips"],["细腰","slim waist"],
+  ["腿部","legs"],["小腿线条","calves"],["脚踝","ankles"],["足部特写","feet"],
+  ["脚趾","toes"],["美人痣","beauty mark"],["性感小痣","mole"],["中等胸部","medium breasts"],
+  ["超巨乳","huge breasts"],["下垂胸","sagging breasts"],["凸点乳","puffy nipples"],["坚挺乳头","erect nipples"],
+  ["私处（泛称）","genitals"],["私处唇","pussy lips"],["小巧唇","small labia"],["饱满厚唇","puffy labia"],
+  ["阴蒂帽","clitoral hood"],["私处特写构图","pussy focus"],["扒开私处","spread pussy"],["耻部丘","mons pubis"],
+  ["阴毛","pubic hair"],["短茬阴毛","pubic hair stubble"],["子宫","womb"],["腹部被顶起","stomach bulge"],
+  ["龟头","glans"],["前端渗液","precum"],["勃起","erection"],["疲软状态","flaccid"],
+  ["无包皮","circumcised"],["带包皮","foreskin"],["掰开后穴","spread anus"],["臀部","ass"],
+  ["宽臀","wide hips"],["腿间缝隙","thigh gap"],["纤细身材","slim"],["沙漏身材","hourglass figure"],
+  ["巨乳化","breast expansion"],["乳头穿孔","nipple piercing"],["接吻","kissing"],["贴身磨蹭","grinding"],
+  ["揪胸","grabbing another's breast"],["揪臀","grabbing another's ass"],["素股","thigh sex"],["肛指","anal fingering"],
+  ["怀孕","pregnant"],["69 式","69"],["吸吮睾丸","ball sucking"],["坐脸","face sitting"],
+  ["站立体口交","standing cunnilingus"],["双人手交","double handjob"],["后侧手交","handjob from behind"],["隔衣手交","handjob over clothes"],
+  ["腿间夹位","thigh straddle"],["跨骑大腿","thigh straddling"],["撕破衣服性交","sex through torn clothes"],["弹奶头","nipple flick"],
+  ["咬乳头","nipple biting"],["奶头插入","nipple fuck"],["四肢着地","all fours"],["后穴珠串","anal beads"],
+  ["手腕束缚","wrist restraints"],["身体涂写文字","body writing"],["奶头夹","nipple clamps"],["阴唇夹","labia clamps"],
+  ["私处夹","pussy clamps"],["睾丸挤压","ball squeeze"],["初夜","defloration"],["跪式口交","kneeling fellatio"],
+  ["多人口交","multiple blowjobs"],["多插","multiple penetration"],["喂乳","breast feeding"],["口交表情","blowjob face"],
+  ["贴脸特写","penis on face"],["口涎","saliva"],["口水失控","drooling"],["舔唇","licking lips"],
+  ["射精特写","cumshot"],["内射瞬间","internal cumshot"],["口头射精","oral cumshot"],["口涎丝","saliva string"],
+  ["口涎滴落","saliva drip"],["舌吻交换","saliva swap"],["口水泛滥","excessive saliva"],["阳具挂涎","saliva on penis"],
+  ["舌头上的精液","cum on tongue"],["精液池","cum pool"],["透视展示","x-ray"],["断面图","cross-section"],
+  ["内部视角","internal view"],["十字系带束身","cross-laced corset"],["渔网紧身衣","fishnet bodysuit"],["蕾丝胸罩","lace bra"],
+  ["蕾丝吊袜带","lace garter belt"],["撩起衣物","shirt lift"],["自己掀起","lifted by self"],["拉链半开","open fly"],
+  ["敞开衬衫","open shirt"],["敞开衣襟","open clothes"],["敞开睡衣","open pajamas"],["撩起裙摆","skirt lift"],
+  ["泳衣拉扯","swimsuit pull"],["泳衣掀起","swimsuit lift"],["泳衣褪下","swimsuit down"],["撕破比基尼","torn bikini"],
+  ["撕破裤袜","torn pantyhose"],["拉扯泳裤","bikini bottom pull"],["兔女郎装","bunnysuit"],["微型比基尼","micro bikini"],
+  ["绳系比基尼","sling bikini"],["侧系比基尼","side-tie bikini"],["开裆连体衣","crotchless bodysuit"],
+["波浪卷发","wavy hair"],];
+
+function nl2tags(text) {
+  let work = text;
+  const found = [];
+  const sorted = SYN.slice().sort((a, b) => b[0].length - a[0].length);
+  for (const [cn, en] of sorted) {
+    if (!work.includes(cn)) continue;
+    found.push(en);
+    work = work.split(cn).join("▪");
+  }
+  const leftover = work.replace(/▪/g, "").replace(/[\s,，。.、;；!！?？的是的着一在里上和与穿戴着有很]+/g, "").trim();
+  return { tags: [...new Set(found)], leftover };
+}
+
+function applyConverted(tags) {
+  const ta = document.getElementById("positive");
+  if (document.getElementById("nlReplace").checked) {
+    ta.value = tags.join(", ");
+  } else {
+    const existing = new Set(posTokens());
+    const add = tags.filter(t => !existing.has(t));
+    if (add.length) ta.value = ta.value.trim() ? (ta.value.replace(/\s*,\s*$/, "") + ", " + add.join(", ")) : add.join(", ");
+  }
+  refreshSel();
+}
+
+function expandSemantics(tags) {
+  const added = new Set();
+  const out = tags.slice();
+  for (const t of tags) {
+    const assoc = ASSOC[t.toLowerCase()];
+    if (!assoc) continue;
+    for (const a of assoc) {
+      if (!tags.includes(a) && !added.has(a)) { added.add(a); out.push(a); }
+    }
+  }
+  return { out, count: added.size };
+}
+
+async function nlConvert() {
+  const st = document.getElementById("nlstatus");
+  const text = document.getElementById("nl").value.trim();
+  if (!text) { st.textContent = "先输入中文描述"; return; }
+  const btn = document.getElementById("nlgo");
+  btn.disabled = true;
+
+  const wantExpand = document.getElementById("nlExpand").checked;
+
+  if (document.getElementById("nlMode").value === "api") {
+    st.textContent = "🛰️ 正在调用 API 转换…";
+    try {
+      const r = await fetch("/nlapi", {method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({...loadApiCfg(), text, expand: wantExpand})});
+      const j = await r.json();
+      if (j.error) {
+        let m = j.error.message || "提交失败";
+        if (j.node_errors) {
+          const parts = [];
+          for (const [nid, ne] of Object.entries(j.node_errors)) {
+            const et = (ne.errors || []).map(e => e.message + (e.details ? `(${e.details})` : "")).join("; ");
+            parts.push(`节点${nid} ${ne.class_type || ""}: ${et}`);
+          }
+          if (parts.length) m += " — " + parts.join(" | ");
+        }
+        st.textContent = "❌ " + m; btn.disabled = false; return;
+      }
+      const tags = j.tags.split(",").map(s => s.trim()).filter(Boolean);
+      applyConverted(tags);
+      st.textContent = `✅ API 已转换 ${tags.length} 个标签` + (j.note ? ` ${j.note}` : "");
+    } catch (e) {
+      st.textContent = "❌ 请求失败：确认 app.py 在运行且网络可达";
+    }
+    btn.disabled = false;
+    return;
+  }
+
+  let { tags, leftover } = nl2tags(text);
+  let expanded = 0;
+  if (wantExpand && tags.length) {
+    const before = tags.length;
+    const res = expandSemantics(tags);
+    tags = res.out; expanded = res.count;
+  }
+  applyConverted(tags);
+  st.textContent = `✅ 已转换 ${tags.length} 个标签` + (expanded ? `（含语义关联 ${expanded} 个）` : "") +
+    (leftover ? `；未识别文字："${leftover}"（可切到 API 模式处理任意句子）` : "，全部识别成功");
+  btn.disabled = false;
+}
+
+function updateModeUI() {
+  const m = document.getElementById("genmode").value;
+  document.getElementById("denoiseBox").style.display = (m === "t2i") ? "none" : "";
+  document.getElementById("ipweightBox").style.display = (m === "charref") ? "" : "none";
+  document.getElementById("refimgBox").style.display = (m === "t2i") ? "none" : "";
+  document.getElementById("ratioBox").style.display = (m === "i2i") ? "none" : "";
+}
+document.getElementById("genmode").addEventListener("change", updateModeUI);
+updateModeUI();
+
+/* ---- API 设置存取（localStorage，仅本机） ---- */
+function saveApiCfg() {
+  localStorage.setItem("easydraw_api", JSON.stringify({
+    base_url: document.getElementById("nlUrl").value.trim(),
+    model: document.getElementById("nlModel").value.trim(),
+    api_key: document.getElementById("nlKey").value.trim(),
+  }));
+  document.getElementById("apisavestatus").textContent = "已保存 ✓";
+  setTimeout(() => document.getElementById("apisavestatus").textContent = "", 2000);
+}
+function loadApiCfg() {
+  try { return JSON.parse(localStorage.getItem("easydraw_api") || "{}"); }
+  catch (e) { return {}; }
+}
+(function initApiCfg() {
+  const cfg = loadApiCfg();
+  if (cfg.base_url) document.getElementById("nlUrl").value = cfg.base_url;
+  if (cfg.model) document.getElementById("nlModel").value = cfg.model;
+  if (cfg.api_key) document.getElementById("nlKey").value = cfg.api_key;
+  fetch("/apicfg").then(r => r.json()).then(s => {
+    if (s.configured) {
+      if (!document.getElementById("nlUrl").value) document.getElementById("nlUrl").value = s.base_url;
+      if (!document.getElementById("nlModel").value) document.getElementById("nlModel").value = s.model;
+      const k = document.getElementById("nlKey");
+      if (!k.value) k.placeholder = "已使用服务器默认 key（" + s.key_hint + "），留空即可";
+    }
+  }).catch(() => {});
+})();
+
+/* ---- 一键: 转换 + 出图 ---- */
+async function nlGenerate() {
+  await nlConvert();
+  await generate();
+}
+
+/* ---- 3秒轮询: 输出(成品) ---- */
+let lastShownOutput = null;
+let pollPrimed = false;
+async function pollLoop(showNew) {
+  try {
+    const h = await fetch("/history?max_items=1");
+    const hj = await h.json();
+    for (const pid in hj) {
+      const o8 = hj[pid].outputs && hj[pid].outputs["8"];
+      if (o8 && o8.images && o8.images.length) {
+        const im = o8.images[0];
+        if (im.filename !== lastShownOutput) {
+          const shouldShow = showNew && pollPrimed;
+          lastShownOutput = im.filename;
+          if (shouldShow) {
+            const url = `/view?filename=${encodeURIComponent(im.filename)}&subfolder=${encodeURIComponent(im.subfolder)}&type=output`;
+            const img = document.getElementById("img");
+            img.src = url; img.style.display = "block";
+            document.getElementById("phph").style.display = "none";
+            const dl = document.getElementById("dl");
+            dl.href = url; dl.download = im.filename; dl.style.display = "inline-block";
+          }
+        }
+      }
+    }
+  } catch (e) {}
+}
+pollLoop(false).then(() => { pollPrimed = true; });
+setInterval(() => pollLoop(true), 3000);
+
+/* ============ 生成逻辑 ============ */
+async function generate() {
+  const btn = document.getElementById("go");
+  const st = document.getElementById("status");
+  btn.disabled = true; st.textContent = "正在提交任务…";
+
+  let pos = document.getElementById("positive").value.trim();
+  const neg = document.getElementById("negative").value.trim();
+  const rating = document.getElementById("rating").value;
+  if (pos && !pos.startsWith("masterpiece")) pos = QUALITY + pos;
+  if (rating) {
+    // 切 R18 时 textarea 已自动注入 nsfw; 提交时只补 rating:explicit, 避免重复
+    const r18 = rating === "nsfw, rating:explicit";
+    const extra = (r18 && posTokens().includes("nsfw")) ? "rating:explicit" : rating;
+    pos = pos ? (pos + ", " + extra) : extra;
+  }
+
+  const mode = document.getElementById("genmode").value;
+  const denoise = +document.getElementById("denoise").value;
+  const ipweight = +document.getElementById("ipweight").value;
+  let refName = null;
+  if (mode === "i2i" || mode === "charref") {
+    const f = document.getElementById("refimg").files[0];
+    if (!f) { st.textContent = (mode === "i2i" ? "图生图" : "角色参考") + "模式：请先选择参考图"; btn.disabled = false; return; }
+    st.textContent = "📤 上传参考图…";
+    let uj = null;
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 60000);
+      const b64 = await new Promise((res, rej) => {
+        const rd = new FileReader();
+        rd.onload = () => res(String(rd.result).split(",")[1]);
+        rd.onerror = () => rej(new Error("读取文件失败"));
+        rd.readAsDataURL(f);
+      });
+      const up = await fetch("/upload_b64", {method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({name: f.name, data: b64}), signal: ctrl.signal});
+      clearTimeout(timer);
+      uj = await up.json();
+    } catch (e) {
+      st.textContent = "❌ 上传超时或服务无响应：请刷新本页面（F5）后重试；若反复出现，双击 StopEasyDraw 再用桌面图标重启";
+      btn.disabled = false; return;
+    }
+    if (!uj || !uj.name) { st.textContent = "参考图上传失败（HTTP " + (uj ? up.status : "?") + "）"; btn.disabled = false; return; }
+    refName = uj.name;
+  }
+
+  const [w, h] = document.getElementById("ratio").value.split("x").map(Number);
+  const steps = +document.getElementById("steps").value;
+  let cfg = +document.getElementById("cfg").value;
+  let seed = document.getElementById("seed").value.trim();
+  seed = (seed === "-1" || seed === "") ? Math.floor(Math.random() * 4294967295) : +seed;
+
+  const wf = {
+    "1": {class_type: "CheckpointLoaderSimple", inputs: {ckpt_name: "NoobAI-XL-Vpred-v1.0.safetensors"}},
+    "2": {class_type: "ModelSamplingDiscrete", inputs: {model: ["1",0], sampling: "v_prediction", zsnr: true}},
+    "15": {class_type: "RescaleCFG", inputs: {model: ["2",0], multiplier: 0.7}},
+    "3": {class_type: "CLIPTextEncode", inputs: {text: pos, clip: ["1",1]}},
+    "4": {class_type: "CLIPTextEncode", inputs: {text: neg, clip: ["1",1]}},
+    "6": {class_type: "KSampler", inputs: {seed, steps, cfg,
+        sampler_name: "euler_ancestral", scheduler: "normal",
+        denoise: (mode === "t2i" ? 1.0 : denoise),
+        model: ["15",0], positive: ["3",0], negative: ["4",0],
+        latent_image: (mode === "i2i" ? ["10",0] : (mode === "charref" && denoise < 1 ? ["10",0] : (mode === "charref" ? ["14",0] : ["5",0])))}},
+    "7": {class_type: "VAEDecode", inputs: {samples: ["6",0], vae: ["1",2]}},
+    "8": {class_type: "SaveImage", inputs: {images: ["7",0], filename_prefix: "easy_ui"}}
+  };
+  if (mode === "i2i") {
+    wf["5"] = {class_type: "LoadImage", inputs: {image: refName}};
+    wf["10"] = {class_type: "VAEEncode", inputs: {pixels: ["5",0], vae: ["1",2]}};
+  } else if (mode === "charref") {
+    wf["5"] = {class_type: "LoadImage", inputs: {image: refName}};
+    wf["10"] = {class_type: "VAEEncode", inputs: {pixels: ["5",0], vae: ["1",2]}};
+    wf["11"] = {class_type: "IPAdapterModelLoader", inputs: {ipadapter_file: "ip-adapter-plus_sdxl_vit-h.safetensors"}};
+    wf["12"] = {class_type: "CLIPVisionLoader", inputs: {clip_name: "clip_vision_h_vith.safetensors"}};
+    wf["13"] = {class_type: "IPAdapterAdvanced", inputs: {model: ["1",0], ipadapter: ["11",0], image: ["5",0],
+        clip_vision: ["12",0], weight: ipweight, weight_type: "ease out", combine_embeds: "concat",
+        start_at: 0, end_at: 1, embeds_scaling: "V only"}};
+    wf["2"].inputs.model = ["13",0];
+    wf["14"] = {class_type: "EmptyLatentImage", inputs: {width: w, height: h, batch_size: 1}};
+  } else {
+    wf["5"] = {class_type: "EmptyLatentImage", inputs: {width: w, height: h, batch_size: 1}};
+  }
+
+  try {
+    const r = await fetch("/prompt", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({prompt: wf}), signal: (window.AbortSignal && AbortSignal.timeout) ? AbortSignal.timeout(60000) : undefined});
+    const j = await r.json();
+    if (j.error) {
+      let m = j.error.message || "提交失败";
+      if (j.node_errors) {
+        const parts = [];
+        for (const [nid, ne] of Object.entries(j.node_errors)) {
+          const et = (ne.errors || []).map(e => e.message + (e.details ? `(${e.details})` : "")).join("; ");
+          parts.push(`节点${nid} ${ne.class_type || ""}: ${et}`);
+        }
+        if (parts.length) m += " — " + parts.join(" | ");
+      }
+      st.textContent = "❌ " + m; btn.disabled = false; return;
+    }
+    const pid = j.prompt_id;
+    const total = Math.round(steps * (w*h >= 1048576 ? 3.2 : 2.5) / 1.2);
+    let cnt = 0, waited = 0;
+    const maxWait = 600000;
+    const tick = setInterval(async () => {
+      waited += 2;
+      if (waited >= maxWait) {
+        clearInterval(tick);
+        st.textContent = "⏱ 超过 10 分钟未完成：ComfyUI 可能卡住了。双击 StopEasyDraw.bat 关闭后，再用桌面 Easy Draw 图标重启";
+        btn.disabled = false; return;
+      }
+      let hist;
+      try {
+        const h2 = await fetch("/history/" + pid);
+        hist = await h2.json();
+      } catch (e) {
+        st.textContent = "⚠ 后端暂时无响应（模型加载或高负载中），继续等待…";
+        return;
+      }
+      if (Object.prototype.hasOwnProperty.call(hist, pid)) {
+        clearInterval(tick); hist_done(pid, hist); btn.disabled = false;
+      } else {
+        cnt += 2;
+        const left = Math.max(0, total - cnt);
+        st.textContent = left > 0
+          ? `⛏️ 模型生成中… 约 ${left}s`
+          : `⛏️ 模型生成中… 已等 ${Math.round(waited/60)} 分钟（首次加载大模型较慢属正常）`;
+      }
+    }, 3000);
+  } catch (e) {
+    st.textContent = "连接失败，请确认 ComfyUI 已启动"; btn.disabled = false;
+  }
+}
+
+function hist_done(pid, hist) {
+  const st = document.getElementById("status");
+  const node = hist[pid]?.outputs?.["8"];
+  if (!node || !node.images?.length) { st.textContent = "生成出错，查看 ComfyUI 控制台"; return; }
+  const im = node.images[0];
+  const url = `/view?filename=${encodeURIComponent(im.filename)}&subfolder=${encodeURIComponent(im.subfolder)}&type=output`;
+  const img = document.getElementById("img");
+  img.src = url; img.style.display = "block";
+  document.getElementById("phph").style.display = "none";
+  const dl = document.getElementById("dl");
+  dl.href = url; dl.download = im.filename; dl.style.display = "inline-block";
+  st.textContent = `✅ 完成!`;
+}
+</script>
+</body>
+</html>
