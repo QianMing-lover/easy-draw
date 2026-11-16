@@ -46,6 +46,28 @@ graph LR
     C --> O["output/ 成图"]
 ```
 
+## ⚡ 一键安装（Windows）
+
+新机器上双击 **`一键安装.bat`**，自动完成：
+
+| 步骤 | 内容 |
+|---|---|
+| 1 | 环境检查（磁盘/GPU/代理自动探测） |
+| 2 | Python 3.11.9（缺则静默安装） |
+| 3 | ComfyUI 引擎（git 浅克隆） |
+| 4 | 虚拟环境 + torch CUDA 13.0 + 全部依赖 |
+| 5 | IPAdapter 自定义节点（角色参考模式） |
+| 6 | 模型下载 ~9.9GB（hf-mirror 国内镜像，断点续传） |
+| 7 | Easy Draw 应用（自动生成 `api_config.json`，**不含任何个人 API**） |
+| 8 | 可选：本地 LLM（llama.cpp + GGUF，失败不影响出图） |
+| 9 | 打包 EasyDraw.exe + 自检 + 桌面快捷方式 |
+
+- 默认安装到 `C:\AI`（与启动脚本的路径约定一致），可用参数改：`.\install.ps1 -InstallDir D:\AI`
+- 跳过选项：`-SkipModels`（已有模型）/ `-SkipLLM` / `-SkipBuildExe` / `-DryRun`（只打印步骤）
+- 下载源：默认 `hf-mirror.com` 国内镜像，`-UseOfficialHf` 切官方
+- pip 镜像默认清华，`-PipMirror` 可换
+- 空间需求 ~12GB，耗时 30–90 分钟（取决于网速）
+
 ## 🚀 运行环境
 
 | 依赖 | 说明 |
